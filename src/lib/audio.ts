@@ -99,37 +99,105 @@ function createBrownNoise(ctx: AudioContext, gain: GainNode): AudioNode[] {
   return [source];
 }
 
-function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
-  // White noise filtered to sound like rain
-  const bufferSize = 2 * ctx.sampleRate;
+function createPinkNoise(ctx: AudioContext): AudioBuffer {
+  const bufferSize = 4 * ctx.sampleRate;
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
 
+  // Voss-McCartney algorithm for pink noise
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99886 * b0 + white * 0.0555179;
+    b1 = 0.99332 * b1 + white * 0.0750312;
+    b2 = 0.96900 * b2 + white * 0.1538520;
+    b3 = 0.86650 * b3 + white * 0.3104856;
+    b4 = 0.55000 * b4 + white * 0.5329522;
+    b5 = -0.7616 * b5 - white * 0.0168980;
+    data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+    data[i] *= 0.11; // compensation
+    b6 = white * 0.115926;
+  }
+  return buffer;
+}
+
+function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
+  const nodes: AudioNode[] = [];
+
+  // 1. The Main Wash (Pink Noise) - Natural and soft
+  const washBuffer = createPinkNoise(ctx);
+  const washSource = ctx.createBufferSource();
+  washSource.buffer = washBuffer;
+  washSource.loop = true;
+
+  const washFilter = ctx.createBiquadFilter();
+  washFilter.type = 'lowpass';
+  washFilter.frequency.value = 1200;
+  washFilter.Q.value = 0.5;
+
+  washSource.connect(washFilter);
+  washFilter.connect(gain);
+  washSource.start();
+  nodes.push(washSource, washFilter);
+
+  // 2. The Patter (High-passed grains) - Simulates droplets
+  const patterSource = ctx.createBufferSource();
+  patterSource.buffer = washBuffer; // reuse pink noise but filter differently
+  patterSource.loop = true;
+
+  const patterFilter = ctx.createBiquadFilter();
+  patterFilter.type = 'highpass';
+  patterFilter.frequency.value = 3500;
+
+  const patterGain = ctx.createGain();
+  patterGain.gain.value = 0.15;
+
+  // LFO for natural volume fluctuations (wind/gusts)
+  const lfo = ctx.createOscillator();
+  const lfoGain = ctx.createGain();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.15;
+  lfoGain.gain.value = 0.05;
+
+  lfo.connect(lfoGain);
+  lfoGain.connect(patterGain.gain);
+  lfo.start();
+
+  patterSource.connect(patterFilter);
+  patterFilter.connect(patterGain);
+  patterGain.connect(gain);
+  patterSource.start();
+  nodes.push(patterSource, patterFilter, patterGain, lfo, lfoGain);
+
+  // 3. The Atmosphere (Low Rumble) - Distant storm feel
+  const rumbleBuffer = ctx.createBuffer(1, 2 * ctx.sampleRate, ctx.sampleRate);
+  const rumbleData = rumbleBuffer.getChannelData(0);
+  let lastOut = 0;
+  for (let i = 0; i < rumbleBuffer.length; i++) {
+    const white = Math.random() * 2 - 1;
+    rumbleData[i] = (lastOut + 0.02 * white) / 1.02;
+    lastOut = rumbleData[i];
+    rumbleData[i] *= 2.5;
   }
 
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
+  const rumbleSource = ctx.createBufferSource();
+  rumbleSource.buffer = rumbleBuffer;
+  rumbleSource.loop = true;
 
-  // Bandpass filter for rain-like sound
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 3000;
-  filter.Q.value = 0.5;
+  const rumbleFilter = ctx.createBiquadFilter();
+  rumbleFilter.type = 'lowpass';
+  rumbleFilter.frequency.value = 150;
 
-  // Highpass to remove rumble
-  const highpass = ctx.createBiquadFilter();
-  highpass.type = 'highpass';
-  highpass.frequency.value = 400;
+  const rumbleGain = ctx.createGain();
+  rumbleGain.gain.value = 0.4;
 
-  source.connect(highpass);
-  highpass.connect(filter);
-  filter.connect(gain);
-  source.start();
+  rumbleSource.connect(rumbleFilter);
+  rumbleFilter.connect(rumbleGain);
+  rumbleGain.connect(gain);
+  rumbleSource.start();
+  nodes.push(rumbleSource, rumbleFilter, rumbleGain);
 
-  return [source, filter, highpass];
+  return nodes;
 }
 
 function createLofiSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
@@ -177,7 +245,11 @@ export function startAmbientSound(type: AmbientSound, volume: number): void {
   try {
     const ctx = getAudioContext();
     ambientGain = ctx.createGain();
-    ambientGain.gain.value = volume * 0.5;
+    
+    // Start with 0 volume for fade-in
+    ambientGain.gain.setValueAtTime(0, ctx.currentTime);
+    ambientGain.gain.linearRampToValueAtTime(volume * 0.5, ctx.currentTime + 1.2);
+    
     ambientGain.connect(ctx.destination);
 
     switch (type) {
@@ -197,19 +269,41 @@ export function startAmbientSound(type: AmbientSound, volume: number): void {
 }
 
 export function stopAmbientSound(): void {
-  ambientNodes.forEach(node => {
-    try {
-      if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
-        node.stop();
-      }
-      node.disconnect();
-    } catch {
-      // Already stopped
-    }
-  });
-  ambientNodes = [];
-  if (ambientGain) {
-    try { ambientGain.disconnect(); } catch { /* */ }
+  const ctx = audioContext;
+  if (ambientGain && ctx) {
+    // Fade out before stopping
+    const currentGain = ambientGain.gain.value;
+    ambientGain.gain.cancelScheduledValues(ctx.currentTime);
+    ambientGain.gain.setValueAtTime(currentGain, ctx.currentTime);
+    ambientGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+
+    const nodesToStop = [...ambientNodes];
+    const gainToDisconnect = ambientGain;
+
+    setTimeout(() => {
+      nodesToStop.forEach(node => {
+        try {
+          if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
+            node.stop();
+          }
+          node.disconnect();
+        } catch { /* Already stopped */ }
+      });
+      try { gainToDisconnect.disconnect(); } catch { /* */ }
+    }, 850);
+
+    ambientNodes = [];
+    ambientGain = null;
+  } else {
+    ambientNodes.forEach(node => {
+      try {
+        if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
+          node.stop();
+        }
+        node.disconnect();
+      } catch { /* */ }
+    });
+    ambientNodes = [];
     ambientGain = null;
   }
 }
