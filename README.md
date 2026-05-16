@@ -2,7 +2,7 @@
 
 Focus is a premium, minimalist study timer application designed to help you maintain deep work through integrated Pomodoro cycles, task management, and immersive ambient soundscapes.
 
-![Focus App Screenshot](https://study-timer-pink.vercel.app/og-image.png) *(Note: Add actual screenshot in production)*
+![Focus App Screenshot](./public/screenshot.png)
 
 ## ✨ Features
 
