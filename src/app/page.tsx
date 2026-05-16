@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useStatsStore } from '@/stores/useStatsStore';
@@ -33,12 +34,7 @@ export default function DashboardPage() {
     setTotalTasksForToday(tasks.length);
   }, [tasks.length, setTotalTasksForToday]);
 
-  // Watch for task completions to trigger confetti
   const completedCount = tasks.filter((t) => t.completed).length;
-  const prevCompletedRef = useEffect(() => {
-    // Skip initial mount
-  }, []);
-
   const lastCompletedCountRef = useState(completedCount);
 
   useEffect(() => {
@@ -56,37 +52,84 @@ export default function DashboardPage() {
     [startPomodoro, focusDuration, router]
   );
 
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+      className="max-w-xl mx-auto px-6 py-12 md:py-20 space-y-12"
+    >
       <ConfettiEffect active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Focus</h1>
-          <p className="text-sm text-[var(--muted)] mt-0.5">
+      {/* ── Sanctuary Header ── */}
+      <header className="flex items-end justify-between">
+        <div className="space-y-1">
+          <motion.h1 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 1 }}
+            className="text-4xl font-semibold tracking-tight text-[hsl(var(--foreground))] glow-text"
+          >
+            Sanctuary
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            transition={{ delay: 0.4, duration: 1 }}
+            className="text-sm font-medium tracking-wide uppercase text-[hsl(var(--muted))]"
+          >
             {format(new Date(), 'EEEE, MMMM d')}
-          </p>
+          </motion.p>
         </div>
         <ThemeToggle />
-      </div>
+      </header>
 
-      {/* Stats Overview */}
-      <StatsOverview />
+      {/* ── Journey Stats ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 1 }}
+      >
+        <StatsOverview />
+      </motion.div>
 
-      {/* Active Timer */}
-      {activeTaskId && <ActiveSession compact />}
+      {/* ── Active Session ── */}
+      <AnimatePresence mode="popLayout">
+        {activeTaskId && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <ActiveSession compact />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Task List */}
-      <TaskList onStartTask={handleStartTask} />
-    </div>
+      {/* ── Intentions List ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 1 }}
+        className="space-y-4"
+      >
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(var(--muted))] opacity-60">
+            Today&apos;s Intentions
+          </h2>
+        </div>
+        <TaskList onStartTask={handleStartTask} />
+      </motion.div>
+
+      <footer className="pt-12 text-center opacity-20 hover:opacity-40 transition-opacity">
+        <p className="text-[10px] uppercase tracking-[0.4em] font-bold">
+          Rest. Focus. Repeat.
+        </p>
+      </footer>
+    </motion.div>
   );
 }

@@ -26,7 +26,18 @@ export function ProgressRing({
 
   return (
     <div className={cn('relative inline-flex items-center justify-center', className)}>
-      <svg width={size} height={size} className="-rotate-90">
+      <svg width={size} height={size} className="-rotate-90 filter drop-shadow-sm">
+        {/* Atmosphere / Glow ring */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth * 1.5}
+          className="opacity-[0.03] blur-[2px]"
+        />
+        
         {/* Background ring */}
         <circle
           cx={size / 2}
@@ -35,9 +46,26 @@ export function ProgressRing({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="opacity-[0.08]"
+          className="opacity-[0.06]"
         />
-        {/* Progress ring */}
+        
+        {/* Progress ring glow */}
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color || 'hsl(var(--accent))'}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+          className="opacity-20 blur-[4px]"
+        />
+
+        {/* Sharp Progress ring */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -49,12 +77,13 @@ export function ProgressRing({
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
+          transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
         />
+        
         <defs>
           <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#a78bfa" />
-            <stop offset="100%" stopColor="#818cf8" />
+            <stop offset="0%" stopColor="hsl(var(--accent))" />
+            <stop offset="100%" stopColor="hsl(var(--accent) / 0.7)" />
           </linearGradient>
         </defs>
       </svg>

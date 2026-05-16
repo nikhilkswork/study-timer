@@ -13,56 +13,46 @@ export function StatsOverview() {
   const completedToday = tasks.filter((t) => t.completed).length;
   const totalToday = tasks.length;
   const completionPct = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
-
   const focusHours = (totalFocusMinutes / 60).toFixed(1);
 
-  const cards = [
+  const stats = [
     {
       icon: CheckCircle2,
-      label: 'Completed',
-      value: `${completedToday}/${totalToday}`,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
+      label: 'Focus Earned',
+      value: `${completedToday} / ${totalToday}`,
     },
     {
       icon: Clock,
-      label: 'Focus Time',
+      label: 'Deep Work',
       value: `${focusHours}h`,
-      color: 'text-blue-400',
-      bg: 'bg-blue-500/10',
     },
     {
       icon: Flame,
-      label: 'Streak',
-      value: `${currentStreak}d`,
-      color: 'text-orange-400',
-      bg: 'bg-orange-500/10',
+      label: 'Consistency',
+      value: `${currentStreak} Days`,
     },
     {
       icon: TrendingUp,
-      label: 'Today',
+      label: 'Completion',
       value: `${completionPct}%`,
-      color: 'text-[var(--accent)]',
-      bg: 'bg-[var(--accent)]/10',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {cards.map((card, i) => (
+    <div className="grid grid-cols-2 gap-4">
+      {stats.map((stat, i) => (
         <motion.div
-          key={card.label}
+          key={stat.label}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05, duration: 0.3 }}
-          className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--border)]
-                     hover:shadow-lg hover:shadow-black/5 transition-all duration-300"
+          transition={{ delay: i * 0.1 + 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="p-6 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] group hover:border-[hsl(var(--muted))] transition-all duration-700"
         >
-          <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center mb-2`}>
-            <card.icon size={16} className={card.color} />
+          <div className="flex items-start justify-between mb-3">
+            <stat.icon size={18} className="text-[hsl(var(--muted))] group-hover:text-[hsl(var(--accent))] transition-colors duration-700" />
           </div>
-          <p className="text-xl font-bold text-[var(--foreground)]">{card.value}</p>
-          <p className="text-xs text-[var(--muted)] mt-0.5">{card.label}</p>
+          <p className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">{stat.value}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--muted))] mt-1 opacity-60">{stat.label}</p>
         </motion.div>
       ))}
     </div>

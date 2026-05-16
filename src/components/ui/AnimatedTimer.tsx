@@ -15,16 +15,16 @@ function AnimatedDigit({ digit, className }: { digit: string; className?: string
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={digit}
-          initial={{ y: '-100%', opacity: 0 }}
-          animate={{ y: '0%', opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
+          initial={{ y: '-60%', opacity: 0, filter: 'blur(8px)', scale: 0.9 }}
+          animate={{ y: '0%', opacity: 1, filter: 'blur(0px)', scale: 1 }}
+          exit={{ y: '60%', opacity: 0, filter: 'blur(8px)', scale: 0.95 }}
           transition={{
             type: 'spring',
-            stiffness: 300,
-            damping: 30,
-            mass: 0.8,
+            stiffness: 120,
+            damping: 24,
+            mass: 1.2,
           }}
-          className="inline-block"
+          className="inline-block glow-text"
         >
           {digit}
         </motion.span>
@@ -44,21 +44,24 @@ export function AnimatedTimer({ time, className, enlarged }: AnimatedTimerProps)
 
   return (
     <div
-      className={`font-mono font-bold tracking-tight text-[var(--foreground)] flex items-center justify-center ${
-        enlarged ? 'text-7xl md:text-8xl' : 'text-5xl md:text-6xl'
+      className={`font-mono font-medium tracking-tight text-[var(--foreground)] flex items-center justify-center ${
+        enlarged ? 'text-8xl md:text-9xl' : 'text-5xl md:text-6xl'
       } ${className ?? ''}`}
-      style={{ transition: 'font-size 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}
+      style={{ 
+        transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        filter: enlarged ? 'drop-shadow(0 0 20px hsla(var(--accent) / 0.15))' : 'none'
+      }}
     >
       {chars.map((char, i) =>
         char === ':' ? (
-          <span key={`colon-${i}`} className="mx-0.5 opacity-50">
+          <span key={`colon-${i}`} className="mx-1 opacity-20 animate-pulse">
             :
           </span>
         ) : (
           <AnimatedDigit
             key={`pos-${i}`}
             digit={char}
-            className="w-[0.6em] text-center"
+            className="w-[0.65em] text-center"
           />
         )
       )}
