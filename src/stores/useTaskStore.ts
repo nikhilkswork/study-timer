@@ -14,7 +14,6 @@ interface TaskStore {
   addTask: (title: string, totalDuration: number) => void;
   editTask: (id: string, title: string, totalDuration: number) => void;
   deleteTask: (id: string) => void;
-  toggleComplete: (id: string) => void;
   completeTask: (id: string) => void;
   updateTaskProgress: (id: string, elapsedSeconds: number, pomodorosCompleted: number) => void;
 
@@ -88,16 +87,6 @@ export const useTaskStore = create<TaskStore>()(
             pomodoro.activeTaskId === id
               ? { activeTaskId: null, sessionType: 'focus' as const, timeRemaining: 0, isRunning: false, currentPomodoro: 0 }
               : state.pomodoro,
-        }));
-      },
-
-      toggleComplete: (id) => {
-        set((state) => ({
-          tasks: state.tasks.map((t) =>
-            t.id === id
-              ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : undefined }
-              : t
-          ),
         }));
       },
 

@@ -18,9 +18,6 @@ interface TaskItemProps {
 export function TaskItem({ task, isActive, onStart }: TaskItemProps) {
   const [editing, setEditing] = useState(false);
   const deleteTask = useTaskStore((s) => s.deleteTask);
-  const toggleComplete = useTaskStore((s) => s.toggleComplete);
-  const focusDuration = useSettingsStore((s) => s.focusDuration);
-
   const progress = getProgressPercentage(task.elapsedTime, task.totalDuration * 60);
 
   if (editing) {
@@ -67,17 +64,18 @@ export function TaskItem({ task, isActive, onStart }: TaskItemProps) {
       )}
 
       <div className="relative flex items-center gap-3">
-        {/* Checkbox */}
-        <button
-          onClick={() => toggleComplete(task.id)}
+        {/* Status Indicator (Visual Only) */}
+        <div
           className={cn(
             'flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300',
             task.completed
               ? 'bg-[var(--accent)] border-[var(--accent)]'
-              : 'border-[var(--border)] hover:border-[var(--accent)]'
+              : isActive
+              ? 'border-[var(--accent)] animate-pulse'
+              : 'border-[var(--border)]'
           )}
         >
-          {task.completed && (
+          {task.completed ? (
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -85,8 +83,10 @@ export function TaskItem({ task, isActive, onStart }: TaskItemProps) {
             >
               <Check size={12} className="text-white" strokeWidth={3} />
             </motion.div>
-          )}
-        </button>
+          ) : isActive ? (
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+          ) : null}
+        </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ export function TaskItem({ task, isActive, onStart }: TaskItemProps) {
             className={cn(
               'text-sm font-medium truncate transition-all duration-300',
               task.completed
-                ? 'line-through text-[var(--muted)]'
+                ? 'text-[var(--muted)] line-through'
                 : 'text-[var(--foreground)]'
             )}
           >
