@@ -1,6 +1,6 @@
 'use client';
 
-import { Flame, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
+import { Flame, CheckCircle2, Clock, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStatsStore } from '@/stores/useStatsStore';
 import { useTaskStore } from '@/stores/useTaskStore';
@@ -9,17 +9,17 @@ export function StatsOverview() {
   const tasks = useTaskStore((s) => s.tasks);
   const currentStreak = useStatsStore((s) => s.currentStreak);
   const totalFocusMinutes = useStatsStore((s) => s.totalFocusMinutes);
+  const focusPoints = useStatsStore((s) => s.focusPoints);
 
   const completedToday = tasks.filter((t) => t.completed).length;
   const totalToday = tasks.length;
-  const completionPct = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
   const focusHours = (totalFocusMinutes / 60).toFixed(1);
 
   const stats = [
     {
-      icon: CheckCircle2,
-      label: 'Focus Earned',
-      value: `${completedToday} / ${totalToday}`,
+      icon: Star,
+      label: 'Focus Points',
+      value: `${focusPoints}`,
     },
     {
       icon: Clock,
@@ -32,9 +32,9 @@ export function StatsOverview() {
       value: `${currentStreak} Days`,
     },
     {
-      icon: TrendingUp,
-      label: 'Completion',
-      value: `${completionPct}%`,
+      icon: CheckCircle2,
+      label: 'Tasks Done',
+      value: `${completedToday} / ${totalToday}`,
     },
   ];
 

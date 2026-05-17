@@ -9,13 +9,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Focus — Study Timer & Pomodoro",
-  description: "A minimal, calming study timer with automatic Pomodoro cycling, task management, and focus tracking.",
+  title: "Calmora — Deep Focus & Ambient Relaxation",
+  description: "A premium, cinematic focus sanctuary featuring ambient soundscapes, soft ripples, and deep concentration flow.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Focus",
+    title: "Calmora",
   },
 };
 

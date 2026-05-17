@@ -26,6 +26,7 @@ interface TaskStore {
   skipBreak: (focusDuration: number) => void;
   startBreak: (breakDuration: number) => void;
   startNextFocus: (focusDuration: number) => void;
+  resetPomodoro: (durationInSeconds: number) => void;
 
   // Daily
   checkDailyReset: () => void;
@@ -187,6 +188,16 @@ export const useTaskStore = create<TaskStore>()(
             sessionType: 'focus',
             timeRemaining: focusDuration * 60,
             isRunning: true,
+          },
+        }));
+      },
+
+      resetPomodoro: (durationInSeconds) => {
+        set((state) => ({
+          pomodoro: {
+            ...state.pomodoro,
+            timeRemaining: durationInSeconds,
+            isRunning: false,
           },
         }));
       },

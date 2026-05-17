@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pause, Play, SkipForward, Square, Maximize2 } from 'lucide-react';
+import { Pause, Play, SkipForward, Square, Maximize2, RotateCcw } from 'lucide-react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useStatsStore } from '@/stores/useStatsStore';
@@ -25,6 +25,7 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
   const skipBreak = useTaskStore((s) => s.skipBreak);
   const startBreak = useTaskStore((s) => s.startBreak);
   const startNextFocus = useTaskStore((s) => s.startNextFocus);
+  const resetPomodoro = useTaskStore((s) => s.resetPomodoro);
   const completeTask = useTaskStore((s) => s.completeTask);
   const updateTaskProgress = useTaskStore((s) => s.updateTaskProgress);
 
@@ -39,6 +40,13 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
   const lastTickRef = useRef<number | null>(null);
 
   const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
+
+  const handleReset = useCallback(() => {
+    const duration = pomodoro.sessionType === 'focus' ? focusDuration * 60 : breakDuration * 60;
+    resetPomodoro(duration);
+    focusSecondsRef.current = 0;
+    lastTickRef.current = null;
+  }, [pomodoro.sessionType, focusDuration, breakDuration, resetPomodoro]);
 
   const handleSessionEnd = useCallback(() => {
     if (!activeTask) return;
@@ -147,6 +155,7 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
           size={compact ? 160 : 240}
           strokeWidth={compact ? 3 : 5}
           color={pomodoro.sessionType === 'focus' ? undefined : '#34d399'}
+          isRippling={pomodoro.isRunning && pomodoro.sessionType === 'focus'}
         >
           <div className="text-center">
             <motion.p
@@ -181,6 +190,13 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
             className="p-5 rounded-2xl bg-[hsl(var(--accent))] text-white hover:scale-105 active:scale-95 transition-all glow-soft"
           >
             {pomodoro.isRunning ? <Pause size={20} /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
+          </button>
+
+          <button
+            onClick={handleReset}
+            className="p-5 rounded-2xl glass text-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] hover:scale-105 active:scale-95 transition-all"
+          >
+            <RotateCcw size={20} />
           </button>
 
           {pomodoro.sessionType === 'break' && (

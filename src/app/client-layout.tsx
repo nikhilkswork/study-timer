@@ -4,12 +4,16 @@ import { Navigation } from '@/components/Navigation';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { useAmbientSoundSync } from '@/hooks/useAmbientSoundSync';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  useAmbientSoundSync();
 
   return (
     <ThemeProvider>
+      <AmbientBackground />
       <AnimatePresence mode="wait">
         <motion.main
           key={pathname}

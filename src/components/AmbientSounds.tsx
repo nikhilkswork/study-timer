@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CloudRain, Radio, Music, VolumeX, Volume2 } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { startAmbientSound, stopAmbientSound, setAmbientVolume } from '@/lib/audio';
+import { useTaskStore } from '@/stores/useTaskStore';
+import { setAmbientVolume } from '@/lib/audio';
 import type { AmbientSound as AmbientSoundType } from '@/lib/types';
 
 const sounds: { id: AmbientSoundType; label: string; icon: React.ElementType }[] = [
@@ -18,23 +18,18 @@ export function AmbientSounds() {
   const ambientVolume = useSettingsStore((s) => s.ambientVolume);
   const setAmbientSoundSetting = useSettingsStore((s) => s.setAmbientSound);
   const setAmbientVolumeSetting = useSettingsStore((s) => s.setAmbientVolume);
-  const [isPlaying, setIsPlaying] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      stopAmbientSound();
-    };
-  }, []);
+  const isRunning = useTaskStore((s) => s.pomodoro.isRunning);
+  const activeTaskId = useTaskStore((s) => s.pomodoro.activeTaskId);
+
+  // Sound is physically playing only if selected and timer is running with an active task
+  const isPlaying = isRunning && activeTaskId !== null && ambientSound !== 'none';
 
   const toggleSound = (soundId: AmbientSoundType) => {
-    if (ambientSound === soundId && isPlaying) {
-      stopAmbientSound();
+    if (ambientSound === soundId) {
       setAmbientSoundSetting('none');
-      setIsPlaying(false);
     } else {
       setAmbientSoundSetting(soundId);
-      startAmbientSound(soundId, ambientVolume);
-      setIsPlaying(true);
     }
   };
 
@@ -61,7 +56,7 @@ export function AmbientSounds() {
             whileTap={{ scale: 0.95 }}
             onClick={() => toggleSound(id)}
             className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 ${
-              ambientSound === id && isPlaying
+              ambientSound === id
                 ? 'border-[var(--accent)]/50 bg-[var(--accent)]/10 text-[var(--accent)]'
                 : 'border-[var(--border)] bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)]'
             }`}
@@ -72,7 +67,7 @@ export function AmbientSounds() {
         ))}
       </div>
 
-      {isPlaying && (
+      {ambientSound !== 'none' && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}

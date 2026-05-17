@@ -7,6 +7,7 @@ import { getTodayKey, daysBetween } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 
 interface StatsStore extends Stats {
+  focusPoints: number;
   recordFocusMinutes: (minutes: number) => void;
   recordTaskCompletion: () => void;
   setTotalTasksForToday: (count: number) => void;
@@ -40,6 +41,7 @@ function ensureWeeklyDataCurrent(weeklyData: DayStats[]): DayStats[] {
 export const useStatsStore = create<StatsStore>()(
   persist(
     (set, get) => ({
+      focusPoints: 0,
       currentStreak: 0,
       longestStreak: 0,
       totalFocusMinutes: 0,
@@ -49,15 +51,21 @@ export const useStatsStore = create<StatsStore>()(
 
       recordFocusMinutes: (minutes) => {
         const today = getTodayKey();
+        
+        // Optimistic UI Update
         set((state) => {
           const weeklyData = ensureWeeklyDataCurrent(state.weeklyData).map((d) =>
             d.date === today ? { ...d, focusMinutes: d.focusMinutes + minutes } : d
           );
-          return {
+          
+          const newState = {
             totalFocusMinutes: state.totalFocusMinutes + minutes,
+            focusPoints: state.focusPoints + minutes,
             weeklyData,
             lastActiveDate: today,
           };
+
+          return newState;
         });
       },
 
@@ -111,6 +119,7 @@ export const useStatsStore = create<StatsStore>()(
 
       resetStats: () =>
         set({
+          focusPoints: 0,
           currentStreak: 0,
           longestStreak: 0,
           totalFocusMinutes: 0,

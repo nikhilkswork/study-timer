@@ -26,7 +26,7 @@ export function Navigation() {
         <div
           className="flex items-center justify-around py-2 px-4 mx-3 mb-3 md:mt-3 md:mb-0
                       rounded-2xl bg-[var(--card)]/80 backdrop-blur-xl
-                      border border-[var(--border)] shadow-lg"
+                      border border-[var(--border)] shadow-lg gap-2"
         >
           {navItems.map(({ href, icon: Icon, label }) => {
             const isActive = pathname === href;

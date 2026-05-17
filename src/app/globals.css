@@ -23,18 +23,18 @@
 }
 
 [data-theme="dark"] {
-  --background: 240 10% 3%;
-  --foreground: 240 10% 98%;
-  --card: 240 10% 5%;
-  --border: 240 10% 10%;
-  --border-hover: 240 10% 15%;
-  --hover: 240 10% 8%;
-  --muted: 240 5% 65%;
-  --accent: 263 80% 75%;
-  --accent-hover: 263 80% 70%;
-  --input-bg: 240 10% 8%;
-  --glass: rgba(12, 12, 16, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --background: 222 47% 7%;
+  --foreground: 40 10% 95%;
+  --card: 222 47% 9%;
+  --border: 222 20% 15%;
+  --border-hover: 222 20% 20%;
+  --hover: 222 30% 12%;
+  --muted: 215 16% 65%;
+  --accent: 263 60% 65%;
+  --accent-hover: 263 60% 70%;
+  --input-bg: 222 47% 9%;
+  --glass: rgba(10, 15, 26, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 @theme inline {
@@ -68,7 +68,8 @@ body {
 @layer utilities {
   .glass {
     background: var(--glass);
-    backdrop-blur: 24px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--glass-border);
   }
   

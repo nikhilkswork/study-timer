@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pause, Play, SkipForward, Square, ArrowLeft, Minimize2 } from 'lucide-react';
+import { Pause, Play, SkipForward, Square, ArrowLeft, Minimize2, RotateCcw } from 'lucide-react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useStatsStore } from '@/stores/useStatsStore';
@@ -29,8 +29,11 @@ export default function FocusPage() {
   const skipBreak = useTaskStore((s) => s.skipBreak);
   const startBreak = useTaskStore((s) => s.startBreak);
   const startNextFocus = useTaskStore((s) => s.startNextFocus);
+  const resetPomodoro = useTaskStore((s) => s.resetPomodoro);
   const completeTask = useTaskStore((s) => s.completeTask);
   const updateTaskProgress = useTaskStore((s) => s.updateTaskProgress);
+
+  const [showBreathing, setShowBreathing] = useState(true);
 
   const focusDuration = useSettingsStore((s) => s.focusDuration);
   const breakDuration = useSettingsStore((s) => s.breakDuration);
@@ -44,9 +47,30 @@ export default function FocusPage() {
 
   const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
 
+  const handleReset = useCallback(() => {
+    const duration = pomodoro.sessionType === 'focus' ? focusDuration * 60 : breakDuration * 60;
+    resetPomodoro(duration);
+    focusSecondsRef.current = 0;
+    lastTickRef.current = null;
+  }, [pomodoro.sessionType, focusDuration, breakDuration, resetPomodoro]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isIdle) {
+      setShowBreathing(false);
+      return;
+    }
+
+    setShowBreathing(true);
+    const timer = setTimeout(() => {
+      setShowBreathing(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [isIdle, pomodoro.isRunning, pomodoro.sessionType]);
 
   const resetIdleTimer = useCallback(() => {
     setIsIdle(false);
@@ -178,7 +202,13 @@ export default function FocusPage() {
 
       {/* ── Core Timer ── */}
       <motion.div animate={{ scale: isIdle ? 1.15 : 1, y: isIdle ? 20 : 0 }} transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}>
-        <ProgressRing progress={sessionProgress} size={isIdle ? 320 : 280} strokeWidth={4} color={pomodoro.sessionType === 'focus' ? undefined : '#34d399'}>
+        <ProgressRing 
+          progress={sessionProgress} 
+          size={isIdle ? 320 : 280} 
+          strokeWidth={4} 
+          color={pomodoro.sessionType === 'focus' ? undefined : '#34d399'}
+          isRippling={pomodoro.isRunning && pomodoro.sessionType === 'focus'}
+        >
           <div className="text-center">
             <AnimatedTimer time={pomodoro.timeRemaining} enlarged={isIdle} />
             <motion.p animate={{ opacity: isIdle ? 0 : 0.4 }} transition={{ duration: 1.2 }} className="text-xs font-medium tracking-[0.2em] uppercase text-[hsl(var(--muted))] mt-6 max-w-[200px] truncate mx-auto">
@@ -189,7 +219,14 @@ export default function FocusPage() {
       </motion.div>
 
       {/* ── Inactivity Feedback ── */}
-      <motion.div animate={{ opacity: isIdle ? 0.3 : 0, y: isIdle ? 0 : 10 }} transition={{ duration: 2 }} className="mt-8 pointer-events-none">
+      <motion.div
+        animate={{
+          opacity: showBreathing && !isIdle ? 0.4 : 0,
+          y: showBreathing && !isIdle ? 0 : -10
+        }}
+        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        className="mt-8 pointer-events-none h-6 flex items-center justify-center"
+      >
         <div className="flex items-center gap-3">
           <div className={`w-1.5 h-1.5 rounded-full ${pomodoro.sessionType === 'focus' ? 'bg-[hsl(var(--accent))]' : 'bg-emerald-400'} animate-pulse`} />
           <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[hsl(var(--muted))]">
@@ -212,6 +249,10 @@ export default function FocusPage() {
           </div>
 
           <div className="flex items-center justify-center gap-6">
+            <button onClick={handleReset} className="p-6 rounded-[2rem] glass text-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] hover:scale-105 active:scale-95 transition-all">
+              <RotateCcw size={24} />
+            </button>
+
             <button onClick={pomodoro.isRunning ? pausePomodoro : resumePomodoro} className="p-6 rounded-[2rem] glass text-[hsl(var(--foreground))] hover:scale-105 active:scale-95 transition-all glow-soft">
               {pomodoro.isRunning ? <Pause size={28} /> : <Play size={28} className="ml-1" fill="currentColor" />}
             </button>
