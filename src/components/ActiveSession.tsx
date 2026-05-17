@@ -10,6 +10,7 @@ import { ProgressRing } from './ui/ProgressRing';
 import { getProgressPercentage, cn } from '@/lib/utils';
 import { useLocalTimer } from '@/hooks/useLocalTimer';
 import Link from 'next/link';
+import { initAudioContext } from '@/lib/audio';
 
 interface ActiveSessionProps {
   compact?: boolean;
@@ -145,7 +146,11 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
 
         <div className="flex items-center gap-4">
           <button
-            onClick={pomodoro.isRunning ? pausePomodoro : resumePomodoro}
+            onClick={() => {
+              initAudioContext();
+              if (pomodoro.isRunning) pausePomodoro();
+              else resumePomodoro();
+            }}
             className="p-5 rounded-2xl bg-[hsl(var(--accent))] text-white hover:scale-105 active:scale-95 transition-all glow-soft"
           >
             {pomodoro.isRunning ? <Pause size={20} /> : <Play size={20} className="ml-0.5" fill="currentColor" />}

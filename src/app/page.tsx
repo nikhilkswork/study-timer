@@ -12,6 +12,7 @@ import { StatsOverview } from '@/components/StatsOverview';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ConfettiEffect } from '@/components/ui/ConfettiEffect';
 import { format } from 'date-fns';
+import { initAudioContext } from '@/lib/audio';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function DashboardPage() {
 
   const handleStartTask = useCallback(
     (taskId: string) => {
+      initAudioContext();
       startPomodoro(taskId, focusDuration);
       router.push('/focus');
     },

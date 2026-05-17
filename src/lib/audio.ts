@@ -14,6 +14,17 @@ function getAudioContext(): AudioContext {
   return audioContext;
 }
 
+export function initAudioContext(): void {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+  } catch {
+    // Audio not supported or blocked
+  }
+}
+
 export function playNotificationSound(): void {
   try {
     const ctx = getAudioContext();

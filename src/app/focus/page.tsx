@@ -11,6 +11,7 @@ import { ConfettiEffect } from '@/components/ui/ConfettiEffect';
 import { AmbientSounds } from '@/components/AmbientSounds';
 import { useLocalTimer } from '@/hooks/useLocalTimer';
 import Link from 'next/link';
+import { initAudioContext } from '@/lib/audio';
 
 export default function FocusPage() {
   const [mounted, setMounted] = useState(false);
@@ -208,7 +209,14 @@ export default function FocusPage() {
               <RotateCcw size={24} />
             </button>
 
-            <button onClick={pomodoro.isRunning ? pausePomodoro : resumePomodoro} className="p-6 rounded-[2rem] glass text-[hsl(var(--foreground))] hover:scale-105 active:scale-95 transition-all glow-soft">
+            <button
+              onClick={() => {
+                initAudioContext();
+                if (pomodoro.isRunning) pausePomodoro();
+                else resumePomodoro();
+              }}
+              className="p-6 rounded-[2rem] glass text-[hsl(var(--foreground))] hover:scale-105 active:scale-95 transition-all glow-soft"
+            >
               {pomodoro.isRunning ? <Pause size={28} /> : <Play size={28} className="ml-1" fill="currentColor" />}
             </button>
 

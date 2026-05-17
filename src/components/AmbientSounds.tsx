@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { CloudRain, Radio, Music, VolumeX, Volume2 } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useTaskStore } from '@/stores/useTaskStore';
-import { setAmbientVolume } from '@/lib/audio';
+import { setAmbientVolume, initAudioContext } from '@/lib/audio';
 import type { AmbientSound as AmbientSoundType } from '@/lib/types';
 
 const sounds: { id: AmbientSoundType; label: string; icon: React.ElementType }[] = [
@@ -26,6 +26,7 @@ export function AmbientSounds() {
   const isPlaying = isRunning && activeTaskId !== null && ambientSound !== 'none';
 
   const toggleSound = (soundId: AmbientSoundType) => {
+    initAudioContext();
     if (ambientSound === soundId) {
       setAmbientSoundSetting('none');
     } else {
@@ -34,6 +35,7 @@ export function AmbientSounds() {
   };
 
   const handleVolumeChange = (vol: number) => {
+    initAudioContext();
     setAmbientVolumeSetting(vol);
     setAmbientVolume(vol);
   };
