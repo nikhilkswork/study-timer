@@ -5,13 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Pause, Play, SkipForward, Square, ArrowLeft, Minimize2, RotateCcw } from 'lucide-react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useStatsStore } from '@/stores/useStatsStore';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { AnimatedTimer } from '@/components/ui/AnimatedTimer';
 import { ConfettiEffect } from '@/components/ui/ConfettiEffect';
 import { AmbientSounds } from '@/components/AmbientSounds';
-import { getProgressPercentage } from '@/lib/utils';
-import { playNotificationSound, playCompletionSound } from '@/lib/audio';
+import { useLocalTimer } from '@/hooks/useLocalTimer';
 import Link from 'next/link';
 
 export default function FocusPage() {
@@ -22,37 +20,22 @@ export default function FocusPage() {
 
   const pomodoro = useTaskStore((s) => s.pomodoro);
   const tasks = useTaskStore((s) => s.tasks);
-  const tickPomodoro = useTaskStore((s) => s.tickPomodoro);
   const pausePomodoro = useTaskStore((s) => s.pausePomodoro);
   const resumePomodoro = useTaskStore((s) => s.resumePomodoro);
   const stopPomodoro = useTaskStore((s) => s.stopPomodoro);
   const skipBreak = useTaskStore((s) => s.skipBreak);
-  const startBreak = useTaskStore((s) => s.startBreak);
-  const startNextFocus = useTaskStore((s) => s.startNextFocus);
   const resetPomodoro = useTaskStore((s) => s.resetPomodoro);
-  const completeTask = useTaskStore((s) => s.completeTask);
-  const updateTaskProgress = useTaskStore((s) => s.updateTaskProgress);
 
   const [showBreathing, setShowBreathing] = useState(true);
 
   const focusDuration = useSettingsStore((s) => s.focusDuration);
   const breakDuration = useSettingsStore((s) => s.breakDuration);
-  const notificationSound = useSettingsStore((s) => s.notificationSound);
-
-  const recordFocusMinutes = useStatsStore((s) => s.recordFocusMinutes);
-  const recordTaskCompletion = useStatsStore((s) => s.recordTaskCompletion);
-
-  const focusSecondsRef = useRef(0);
-  const lastTickRef = useRef<number | null>(null);
 
   const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
 
   const handleReset = useCallback(() => {
-    const duration = pomodoro.sessionType === 'focus' ? focusDuration * 60 : breakDuration * 60;
-    resetPomodoro(duration);
-    focusSecondsRef.current = 0;
-    lastTickRef.current = null;
-  }, [pomodoro.sessionType, focusDuration, breakDuration, resetPomodoro]);
+    resetPomodoro();
+  }, [resetPomodoro]);
 
   useEffect(() => {
     setMounted(true);
@@ -91,50 +74,16 @@ export default function FocusPage() {
     };
   }, [resetIdleTimer]);
 
-  const handleSessionEnd = useCallback(() => {
-    if (!activeTask) return;
-    if (pomodoro.sessionType === 'focus') {
-      const focusMins = Math.floor(focusSecondsRef.current / 60);
-      if (focusMins > 0) recordFocusMinutes(focusMins);
-      focusSecondsRef.current = 0;
-      const newElapsed = activeTask.elapsedTime + focusDuration * 60;
-      const newPomodoros = activeTask.pomodorosCompleted + 1;
-      updateTaskProgress(activeTask.id, newElapsed, newPomodoros);
-      if (newElapsed >= activeTask.totalDuration * 60) {
-        completeTask(activeTask.id);
-        recordTaskCompletion();
-        if (notificationSound) playCompletionSound();
-        setShowConfetti(true);
-        return;
-      }
-      if (notificationSound) playNotificationSound();
-      startBreak(breakDuration);
-    } else {
-      if (notificationSound) playNotificationSound();
-      startNextFocus(focusDuration);
-    }
-  }, [activeTask, pomodoro.sessionType, focusDuration, breakDuration, notificationSound, completeTask, recordFocusMinutes, recordTaskCompletion, startBreak, startNextFocus, updateTaskProgress]);
-
-  useEffect(() => {
-    if (!pomodoro.isRunning || !pomodoro.activeTaskId) {
-      lastTickRef.current = null;
-      return;
-    }
-    const interval = setInterval(() => {
-      const now = Date.now();
-      if (lastTickRef.current && pomodoro.sessionType === 'focus') {
-        focusSecondsRef.current += (now - lastTickRef.current) / 1000;
-      }
-      lastTickRef.current = now;
-      const currentTime = useTaskStore.getState().pomodoro.timeRemaining;
-      if (currentTime <= 1) {
-        handleSessionEnd();
-      } else {
-        tickPomodoro();
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [pomodoro.isRunning, pomodoro.activeTaskId, pomodoro.sessionType, tickPomodoro, handleSessionEnd]);
+  const { timeString, progress: sessionProgress } = useLocalTimer({
+    startTime: pomodoro.startTime,
+    targetEndTime: pomodoro.targetEndTime,
+    pausedAt: pomodoro.pausedAt,
+    isRunning: pomodoro.isRunning,
+    isInfinite: pomodoro.isInfinite,
+    focusDuration,
+    breakDuration,
+    sessionType: pomodoro.sessionType,
+  });
 
   if (!mounted) return null;
 
@@ -160,9 +109,9 @@ export default function FocusPage() {
     );
   }
 
-  const sessionDuration = pomodoro.sessionType === 'focus' ? focusDuration * 60 : breakDuration * 60;
-  const sessionProgress = getProgressPercentage(sessionDuration - pomodoro.timeRemaining, sessionDuration);
-  const totalProgress = getProgressPercentage(activeTask.elapsedTime, activeTask.totalDuration * 60);
+  const totalProgress = activeTask.isInfinite
+    ? 0
+    : Math.min(100, Math.max(0, Math.round((activeTask.elapsedTime / (activeTask.totalDuration * 60)) * 100)));
 
   return (
     <div className="flex flex-col items-center min-h-dvh px-6 relative select-none overflow-hidden" onMouseMove={resetIdleTimer} onTouchStart={resetIdleTimer}>
@@ -210,7 +159,7 @@ export default function FocusPage() {
           isRippling={pomodoro.isRunning && pomodoro.sessionType === 'focus'}
         >
           <div className="text-center">
-            <AnimatedTimer time={pomodoro.timeRemaining} enlarged={isIdle} />
+            <AnimatedTimer timeString={timeString} enlarged={isIdle} />
             <motion.p animate={{ opacity: isIdle ? 0 : 0.4 }} transition={{ duration: 1.2 }} className="text-xs font-medium tracking-[0.2em] uppercase text-[hsl(var(--muted))] mt-6 max-w-[200px] truncate mx-auto">
               {activeTask.title}
             </motion.p>
@@ -241,11 +190,17 @@ export default function FocusPage() {
           <div className="space-y-3">
             <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--muted))] opacity-60">
               <span>Overall Journey</span>
-              <span>{totalProgress}%</span>
+              <span>{activeTask.isInfinite ? 'Infinite Mode' : `${totalProgress}%`}</span>
             </div>
-            <div className="w-full h-[3px] rounded-full bg-[hsl(var(--hover))] overflow-hidden">
-              <motion.div className="h-full bg-[hsl(var(--accent))] glow-soft" animate={{ width: `${totalProgress}%` }} transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }} />
-            </div>
+            {activeTask.isInfinite ? (
+              <p className="text-[11px] text-[hsl(var(--muted))] text-center italic tracking-wide">
+                {Math.floor(activeTask.elapsedTime / 60)}m focus logged
+              </p>
+            ) : (
+              <div className="w-full h-[3px] rounded-full bg-[hsl(var(--hover))] overflow-hidden">
+                <motion.div className="h-full bg-[hsl(var(--accent))] glow-soft" animate={{ width: `${totalProgress}%` }} transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }} />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-6">

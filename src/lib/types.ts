@@ -8,16 +8,23 @@ export interface Task {
   createdAt: string;
   pomodorosCompleted: number;
   pomodorosTotal: number;
+  isInfinite?: boolean;
 }
 
 export type SessionType = 'focus' | 'break';
 
 export interface PomodoroState {
   activeTaskId: string | null;
-  sessionType: SessionType;
-  timeRemaining: number; // seconds
+  sessionType: SessionType; // 'focus' | 'break'
   isRunning: boolean;
-  currentPomodoro: number;
+  currentPomodoro: number; // cycle/pomodoro number, e.g. 1, 2, 3...
+  isInfinite: boolean; // is this session an infinite focus session?
+  isInfiniteLoop: boolean; // is this an infinite Pomodoro loop?
+  startTime: number | null; // Date.now() when session started
+  targetEndTime: number | null; // Date.now() when session should end
+  pausedAt: number | null; // Date.now() when session was paused
+  focusDuration: number; // duration of focus in minutes
+  breakDuration: number; // duration of break in minutes
 }
 
 export interface Settings {
@@ -28,6 +35,8 @@ export interface Settings {
   ambientSound: AmbientSound;
   ambientVolume: number;
   notificationSound: boolean;
+  isInfinite: boolean; // default infinite setting
+  isInfiniteLoop: boolean; // default infinite loop setting
 }
 
 export type AmbientSound = 'none' | 'rain' | 'brownNoise' | 'lofi';

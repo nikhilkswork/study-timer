@@ -26,6 +26,7 @@ export function TaskItem({ task, isActive, onStart }: TaskItemProps) {
           editId={task.id}
           editTitle={task.title}
           editDuration={task.totalDuration}
+          editIsInfinite={task.isInfinite}
           onClose={() => setEditing(false)}
         />
       </motion.div>

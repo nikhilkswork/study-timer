@@ -17,11 +17,16 @@ export default function SettingsPage() {
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const notificationSound = useSettingsStore((s) => s.notificationSound);
   const theme = useSettingsStore((s) => s.theme);
+  const isInfinite = useSettingsStore((s) => s.isInfinite);
+  const isInfiniteLoop = useSettingsStore((s) => s.isInfiniteLoop);
+
   const setFocusDuration = useSettingsStore((s) => s.setFocusDuration);
   const setBreakDuration = useSettingsStore((s) => s.setBreakDuration);
   const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled);
   const setNotificationSound = useSettingsStore((s) => s.setNotificationSound);
   const toggleTheme = useSettingsStore((s) => s.toggleTheme);
+  const setIsInfinite = useSettingsStore((s) => s.setIsInfinite);
+  const setIsInfiniteLoop = useSettingsStore((s) => s.setIsInfiniteLoop);
 
   const resetTasks = useTaskStore((s) => s.resetTasks);
   const resetStats = useStatsStore((s) => s.resetStats);
@@ -40,8 +45,8 @@ export default function SettingsPage() {
     <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Settings</h1>
-          <p className="text-sm text-[var(--muted)] mt-0.5">Customize your experience</p>
+          <h1 className="text-2xl font-bold text-[var(--foreground)] tracking-tight">Settings</h1>
+          <p className="text-xs text-[var(--muted)] mt-0.5">Customize your Sanctuary space</p>
         </div>
         <ThemeToggle />
       </div>
@@ -49,27 +54,128 @@ export default function SettingsPage() {
       {/* Timer Settings */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="p-5 rounded-2xl bg-[var(--card)] border border-[var(--border)] space-y-5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 border-b border-[var(--border)]/50 pb-3">
           <Timer size={16} className="text-[var(--accent)]" />
-          <h3 className="text-sm font-semibold text-[var(--foreground)]">Pomodoro Timer</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--foreground)]">Timer Durations</h3>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-[var(--muted)]">Focus Duration</span>
-              <span className="font-mono font-medium text-[var(--foreground)]">{focusDuration}m</span>
+          {/* Focus Duration */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] opacity-60">
+              <span>Focus Duration</span>
+              {isInfinite && <span className="text-[var(--accent)] animate-pulse">Infinite Enabled</span>}
             </div>
-            <input type="range" min={5} max={60} step={5} value={focusDuration}
-              onChange={(e) => setFocusDuration(parseInt(e.target.value))} className="w-full" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)] opacity-40">Hours</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  disabled={isInfinite}
+                  value={isInfinite ? '' : Math.floor(focusDuration / 60)}
+                  onChange={(e) => {
+                    const hrs = Math.max(0, parseInt(e.target.value) || 0);
+                    const mins = focusDuration % 60;
+                    setFocusDuration(hrs * 60 + mins);
+                  }}
+                  placeholder={isInfinite ? '∞' : '0'}
+                  className="w-full px-4 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] 
+                             text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/50
+                             disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-mono text-center"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)] opacity-40">Minutes</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  disabled={isInfinite}
+                  value={isInfinite ? '' : focusDuration % 60}
+                  onChange={(e) => {
+                    const hrs = Math.floor(focusDuration / 60);
+                    const mins = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                    setFocusDuration(hrs * 60 + mins);
+                  }}
+                  placeholder={isInfinite ? '∞' : '25'}
+                  className="w-full px-4 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] 
+                             text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/50
+                             disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-mono text-center"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-[var(--muted)]">Break Duration</span>
-              <span className="font-mono font-medium text-[var(--foreground)]">{breakDuration}m</span>
+
+          {/* Break Duration */}
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] opacity-60">
+              Break Duration
+            </span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)] opacity-40">Hours</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  value={Math.floor(breakDuration / 60)}
+                  onChange={(e) => {
+                    const hrs = Math.max(0, parseInt(e.target.value) || 0);
+                    const mins = breakDuration % 60;
+                    setBreakDuration(hrs * 60 + mins);
+                  }}
+                  placeholder="0"
+                  className="w-full px-4 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] 
+                             text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/50
+                             transition-all text-xs font-mono text-center"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)] opacity-40">Minutes</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={breakDuration % 60}
+                  onChange={(e) => {
+                    const hrs = Math.floor(breakDuration / 60);
+                    const mins = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                    setBreakDuration(hrs * 60 + mins);
+                  }}
+                  placeholder="5"
+                  className="w-full px-4 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] 
+                             text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/50
+                             transition-all text-xs font-mono text-center"
+                />
+              </div>
             </div>
-            <input type="range" min={1} max={30} step={1} value={breakDuration}
-              onChange={(e) => setBreakDuration(parseInt(e.target.value))} className="w-full" />
+          </div>
+
+          {/* Infinite toggles */}
+          <div className="pt-2 space-y-2 border-t border-[var(--border)]/50">
+            <button
+              onClick={() => setIsInfinite(!isInfinite)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-[10px] font-bold uppercase tracking-wider
+                ${isInfinite 
+                  ? 'bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-[0_0_24px_rgba(255,255,255,0.06)]' 
+                  : 'bg-[var(--input-bg)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+            >
+              <span>∞ Default Infinite Sessions</span>
+              <span>{isInfinite ? 'ON' : 'OFF'}</span>
+            </button>
+
+            <button
+              onClick={() => setIsInfiniteLoop(!isInfiniteLoop)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-[10px] font-bold uppercase tracking-wider
+                ${isInfiniteLoop 
+                  ? 'bg-[var(--foreground)] text-[var(--background)] border-transparent shadow-[0_0_24px_rgba(255,255,255,0.06)]' 
+                  : 'bg-[var(--input-bg)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+            >
+              <span>∞ Default Infinite Pomodoro Loop</span>
+              <span>{isInfiniteLoop ? 'ON' : 'OFF'}</span>
+            </button>
           </div>
         </div>
       </motion.div>

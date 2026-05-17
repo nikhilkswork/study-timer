@@ -7,8 +7,8 @@ import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useStatsStore } from '@/stores/useStatsStore';
 import { ProgressRing } from './ui/ProgressRing';
-import { formatTime, getProgressPercentage, cn } from '@/lib/utils';
-import { playNotificationSound, playCompletionSound } from '@/lib/audio';
+import { getProgressPercentage, cn } from '@/lib/utils';
+import { useLocalTimer } from '@/hooks/useLocalTimer';
 import Link from 'next/link';
 
 interface ActiveSessionProps {
@@ -18,58 +18,20 @@ interface ActiveSessionProps {
 export function ActiveSession({ compact = false }: ActiveSessionProps) {
   const pomodoro = useTaskStore((s) => s.pomodoro);
   const tasks = useTaskStore((s) => s.tasks);
-  const tickPomodoro = useTaskStore((s) => s.tickPomodoro);
   const pausePomodoro = useTaskStore((s) => s.pausePomodoro);
   const resumePomodoro = useTaskStore((s) => s.resumePomodoro);
   const stopPomodoro = useTaskStore((s) => s.stopPomodoro);
   const skipBreak = useTaskStore((s) => s.skipBreak);
-  const startBreak = useTaskStore((s) => s.startBreak);
-  const startNextFocus = useTaskStore((s) => s.startNextFocus);
   const resetPomodoro = useTaskStore((s) => s.resetPomodoro);
-  const completeTask = useTaskStore((s) => s.completeTask);
-  const updateTaskProgress = useTaskStore((s) => s.updateTaskProgress);
 
   const focusDuration = useSettingsStore((s) => s.focusDuration);
   const breakDuration = useSettingsStore((s) => s.breakDuration);
-  const notificationSound = useSettingsStore((s) => s.notificationSound);
-
-  const recordFocusMinutes = useStatsStore((s) => s.recordFocusMinutes);
-  const recordTaskCompletion = useStatsStore((s) => s.recordTaskCompletion);
-
-  const focusSecondsRef = useRef(0);
-  const lastTickRef = useRef<number | null>(null);
 
   const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
 
   const handleReset = useCallback(() => {
-    const duration = pomodoro.sessionType === 'focus' ? focusDuration * 60 : breakDuration * 60;
-    resetPomodoro(duration);
-    focusSecondsRef.current = 0;
-    lastTickRef.current = null;
-  }, [pomodoro.sessionType, focusDuration, breakDuration, resetPomodoro]);
-
-  const handleSessionEnd = useCallback(() => {
-    if (!activeTask) return;
-    if (pomodoro.sessionType === 'focus') {
-      const focusMins = Math.floor(focusSecondsRef.current / 60);
-      if (focusMins > 0) recordFocusMinutes(focusMins);
-      focusSecondsRef.current = 0;
-      const newElapsed = activeTask.elapsedTime + focusDuration * 60;
-      const newPomodoros = activeTask.pomodorosCompleted + 1;
-      updateTaskProgress(activeTask.id, newElapsed, newPomodoros);
-      if (newElapsed >= activeTask.totalDuration * 60) {
-        completeTask(activeTask.id);
-        recordTaskCompletion();
-        if (notificationSound) playCompletionSound();
-        return;
-      }
-      if (notificationSound) playNotificationSound();
-      startBreak(breakDuration);
-    } else {
-      if (notificationSound) playNotificationSound();
-      startNextFocus(focusDuration);
-    }
-  }, [activeTask, pomodoro.sessionType, focusDuration, breakDuration, notificationSound, completeTask, recordFocusMinutes, recordTaskCompletion, startBreak, startNextFocus, updateTaskProgress]);
+    resetPomodoro();
+  }, [resetPomodoro]);
 
   const wakeLockRef = useRef<any>(null);
   const requestWakeLock = useCallback(async () => {
@@ -100,30 +62,22 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
     };
   }, [pomodoro.isRunning, requestWakeLock, releaseWakeLock]);
 
-  useEffect(() => {
-    if (!pomodoro.isRunning || !pomodoro.activeTaskId) {
-      lastTickRef.current = null;
-      return;
-    }
-    const interval = setInterval(() => {
-      const now = Date.now();
-      if (lastTickRef.current) {
-        const elapsed = (now - lastTickRef.current) / 1000;
-        if (pomodoro.sessionType === 'focus') focusSecondsRef.current += elapsed;
-      }
-      lastTickRef.current = now;
-      const currentTime = useTaskStore.getState().pomodoro.timeRemaining;
-      if (currentTime <= 1) handleSessionEnd();
-      else tickPomodoro();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [pomodoro.isRunning, pomodoro.activeTaskId, pomodoro.sessionType, tickPomodoro, handleSessionEnd]);
+  const { timeString, progress: sessionProgress } = useLocalTimer({
+    startTime: pomodoro.startTime,
+    targetEndTime: pomodoro.targetEndTime,
+    pausedAt: pomodoro.pausedAt,
+    isRunning: pomodoro.isRunning,
+    isInfinite: pomodoro.isInfinite,
+    focusDuration,
+    breakDuration,
+    sessionType: pomodoro.sessionType,
+  });
 
   if (!activeTask || !pomodoro.activeTaskId) return null;
 
-  const sessionDuration = pomodoro.sessionType === 'focus' ? focusDuration * 60 : breakDuration * 60;
-  const sessionProgress = getProgressPercentage(sessionDuration - pomodoro.timeRemaining, sessionDuration);
-  const totalProgress = getProgressPercentage(activeTask.elapsedTime, activeTask.totalDuration * 60);
+  const totalProgress = activeTask.isInfinite
+    ? 0
+    : getProgressPercentage(activeTask.elapsedTime, activeTask.totalDuration * 60);
 
   return (
     <motion.div
@@ -159,13 +113,12 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
         >
           <div className="text-center">
             <motion.p
-              key={pomodoro.timeRemaining}
               className={cn(
                 "font-mono font-medium tracking-tight text-[hsl(var(--foreground))] glow-text",
                 compact ? 'text-3xl' : 'text-5xl'
               )}
             >
-              {formatTime(pomodoro.timeRemaining)}
+              {timeString}
             </motion.p>
           </div>
         </ProgressRing>
@@ -173,15 +126,21 @@ export function ActiveSession({ compact = false }: ActiveSessionProps) {
         <div className="w-full space-y-3">
           <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--muted))] opacity-60">
             <span>Overall Path</span>
-            <span>{totalProgress}%</span>
+            <span>{activeTask.isInfinite ? 'Infinite Mode' : `${totalProgress}%`}</span>
           </div>
-          <div className="w-full h-[2px] rounded-full bg-[hsl(var(--hover))] overflow-hidden">
-            <motion.div
-              className="h-full bg-[hsl(var(--accent))] glow-soft"
-              animate={{ width: `${totalProgress}%` }}
-              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-            />
-          </div>
+          {activeTask.isInfinite ? (
+            <p className="text-[11px] text-[hsl(var(--muted))] text-center italic tracking-wide">
+              {Math.floor(activeTask.elapsedTime / 60)}m focus logged
+            </p>
+          ) : (
+            <div className="w-full h-[2px] rounded-full bg-[hsl(var(--hover))] overflow-hidden">
+              <motion.div
+                className="h-full bg-[hsl(var(--accent))] glow-soft"
+                animate={{ width: `${totalProgress}%` }}
+                transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4">

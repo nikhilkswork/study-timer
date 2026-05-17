@@ -13,6 +13,8 @@ interface SettingsStore extends Settings {
   setAmbientSound: (val: Settings['ambientSound']) => void;
   setAmbientVolume: (val: number) => void;
   setNotificationSound: (val: boolean) => void;
+  setIsInfinite: (val: boolean) => void;
+  setIsInfiniteLoop: (val: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -25,6 +27,8 @@ export const useSettingsStore = create<SettingsStore>()(
       ambientSound: 'none',
       ambientVolume: 0.5,
       notificationSound: true,
+      isInfinite: false,
+      isInfiniteLoop: false,
 
       setFocusDuration: (val) => set({ focusDuration: val }),
       setBreakDuration: (val) => set({ breakDuration: val }),
@@ -34,6 +38,8 @@ export const useSettingsStore = create<SettingsStore>()(
       setAmbientSound: (val) => set({ ambientSound: val }),
       setAmbientVolume: (val) => set({ ambientVolume: val }),
       setNotificationSound: (val) => set({ notificationSound: val }),
+      setIsInfinite: (val) => set({ isInfinite: val }),
+      setIsInfiniteLoop: (val) => set({ isInfiniteLoop: val }),
     }),
     {
       name: 'study-timer-settings',

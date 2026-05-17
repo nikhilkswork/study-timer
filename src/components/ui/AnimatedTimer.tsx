@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMemo } from 'react';
 
 interface AnimatedTimerProps {
-  time: number; // seconds
+  timeString: string;
   className?: string;
   enlarged?: boolean;
 }
@@ -33,13 +33,7 @@ function AnimatedDigit({ digit, className }: { digit: string; className?: string
   );
 }
 
-export function AnimatedTimer({ time, className, enlarged }: AnimatedTimerProps) {
-  const timeString = useMemo(() => {
-    const mins = Math.floor(time / 60);
-    const secs = time % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, [time]);
-
+export function AnimatedTimer({ timeString, className, enlarged }: AnimatedTimerProps) {
   const chars = timeString.split('');
 
   return (
