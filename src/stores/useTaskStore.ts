@@ -21,6 +21,7 @@ interface TaskStore {
   setSetupSplit: (split: 25 | 50) => void;
   startStudySession: () => void;
   exitStudySession: () => void;
+  cancelStudySetup: () => void;
 
   // Task CRUD
   addTask: (title: string, totalDuration: number, isInfinite?: boolean, isInfiniteLoop?: boolean) => void;
@@ -86,7 +87,9 @@ export const useTaskStore = create<TaskStore>()(
       setSetupSplit: (split) => set({ setupSplit: split }),
 
       startStudySession: () => {
-        const { setupSubject, setupSplit } = get();
+        const { setupSubject, setupSplit, pomodoro } = get();
+        if (pomodoro.activeTaskId) return;
+
         const taskId = generateId();
         const focusDuration = setupSplit;
         const breakDuration = setupSplit === 25 ? 5 : 10;
@@ -102,14 +105,12 @@ export const useTaskStore = create<TaskStore>()(
           pomodorosTotal: 0,
         };
 
+        const now = Date.now();
+        const secs = focusDuration * 60;
+
         set((state) => ({
           tasks: [...state.tasks, newTask],
           setupStep: 'inactive',
-        }));
-
-        const now = Date.now();
-        const secs = focusDuration * 60;
-        set({
           pomodoro: {
             activeTaskId: taskId,
             sessionType: 'focus',
@@ -127,30 +128,35 @@ export const useTaskStore = create<TaskStore>()(
             elapsedSeconds: 0,
             remainingSeconds: secs,
           },
-        });
+        }));
       },
 
       exitStudySession: () => {
-        const { pomodoro, tasks } = get();
-        if (pomodoro.activeTaskId) {
-          const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
-          if (activeTask) {
-            set((state) => ({
-              tasks: state.tasks.map((t) =>
-                t.id === activeTask.id
-                  ? {
-                      ...t,
-                      completed: true,
-                      completedAt: new Date().toISOString(),
-                    }
-                  : t
-              ),
-            }));
-          }
-        }
+        const { pomodoro } = get();
+        const activeId = pomodoro.activeTaskId;
+        if (!activeId) return;
 
+        set((state) => {
+          const updatedTasks = state.tasks.map((t) =>
+            t.id === activeId && !t.completed
+              ? {
+                  ...t,
+                  completed: true,
+                  completedAt: new Date().toISOString(),
+                }
+              : t
+          );
+          return {
+            tasks: updatedTasks,
+            pomodoro: { ...initialPomodoro },
+            setupStep: 'inactive',
+            setupSubject: '',
+          };
+        });
+      },
+
+      cancelStudySetup: () => {
         set({
-          pomodoro: { ...initialPomodoro },
           setupStep: 'inactive',
           setupSubject: '',
         });

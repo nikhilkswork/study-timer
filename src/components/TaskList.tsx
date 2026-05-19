@@ -43,7 +43,7 @@ export function TaskList() {
           <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--hover))] flex items-center justify-center mx-auto mb-4">
             <ListChecks size={24} className="text-[hsl(var(--muted))] opacity-70" />
           </div>
-          <p className="text-sm font-semibold text-[hsl(var(--foreground))] mb-1">Sanctuary Log is empty</p>
+          <p className="text-sm font-semibold text-[hsl(var(--foreground))] mb-1">Comodoro Log is empty</p>
           <p className="text-xs text-[hsl(var(--muted))] max-w-xs mx-auto text-balance">
             Start a study session to log your first focus period of the day.
           </p>

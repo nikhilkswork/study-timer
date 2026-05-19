@@ -203,7 +203,7 @@ export default function SettingsPage() {
 
       {/* App info */}
       <p className="text-center text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--muted))] opacity-60 pt-4">
-        Study Sanctuary v2.0
+        Study Comodoro v2.0
       </p>
     </div>
   );

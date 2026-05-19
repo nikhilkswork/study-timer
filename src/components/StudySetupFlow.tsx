@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { playCountdownTickSound, playCountdownStartSound, initAudioContext } from '@/lib/audio';
 
@@ -14,41 +15,50 @@ export function StudySetupFlow() {
   const setSetupSubject = useTaskStore((s) => s.setSetupSubject);
   const setSetupSplit = useTaskStore((s) => s.setSetupSplit);
   const startStudySession = useTaskStore((s) => s.startStudySession);
+  const cancelStudySetup = useTaskStore((s) => s.cancelStudySetup);
 
   const [inputValue, setInputValue] = useState(setupSubject);
   const [countdown, setCountdown] = useState(5);
+  const startCalled = useRef(false);
 
   // Sync state if setupSubject changes
   useEffect(() => {
     setInputValue(setupSubject);
   }, [setupSubject]);
 
-  // Handle countdown ticking
+  // Handle countdown ticking cleanly without running side-effects in state updater
   useEffect(() => {
     if (setupStep !== 'countdown') {
       setCountdown(5);
+      startCalled.current = false;
       return;
     }
 
     initAudioContext();
     playCountdownTickSound();
 
+    let currentVal = 5;
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
+      currentVal -= 1;
+      setCountdown(currentVal);
+
+      if (currentVal <= 0) {
+        clearInterval(interval);
+        if (!startCalled.current) {
+          startCalled.current = true;
           playCountdownStartSound();
           setTimeout(() => {
             startStudySession();
-          }, 400);
-          return 0;
+          }, 300);
         }
+      } else {
         playCountdownTickSound();
-        return prev - 1;
-      });
+      }
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [setupStep, startStudySession]);
 
   const handleSubjectSubmit = (e?: React.FormEvent) => {
@@ -83,8 +93,18 @@ export function StudySetupFlow() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md text-center space-y-8"
+            className="w-full max-w-md text-center space-y-8 relative"
           >
+            {/* Cancel Button */}
+            <button
+              onClick={cancelStudySetup}
+              className="absolute -top-16 right-0 px-3 py-1.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]/35 text-[hsl(var(--muted))] text-xs font-semibold hover:bg-[hsl(var(--hover))] hover:text-[hsl(var(--foreground))] transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-1"
+              title="Cancel Setup"
+            >
+              <X size={13} />
+              Cancel
+            </button>
+
             <div className="space-y-3">
               <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
                 What do you want to study?
@@ -133,8 +153,18 @@ export function StudySetupFlow() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md text-center space-y-8"
+            className="w-full max-w-md text-center space-y-8 relative"
           >
+            {/* Cancel Button */}
+            <button
+              onClick={cancelStudySetup}
+              className="absolute -top-16 right-0 px-3 py-1.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]/35 text-[hsl(var(--muted))] text-xs font-semibold hover:bg-[hsl(var(--hover))] hover:text-[hsl(var(--foreground))] transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-1"
+              title="Cancel Setup"
+            >
+              <X size={13} />
+              Cancel
+            </button>
+
             <div className="space-y-3">
               <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
                 Choose the pomodoro split
@@ -200,7 +230,7 @@ export function StudySetupFlow() {
               {countdown > 0 ? countdown : 'Go!'}
             </motion.div>
             <p className="text-xs text-white/60 tracking-[0.3em] uppercase mt-8 font-semibold">
-              Preparing your sanctuary...
+              Preparing your comodoro...
             </p>
           </motion.div>
         )}

@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Calmora — Deep Focus & Ambient Relaxation",
-  description: "A premium, cinematic focus sanctuary featuring ambient soundscapes, soft ripples, and deep concentration flow.",
+  description: "A premium, cinematic focus comodoro featuring ambient soundscapes, soft ripples, and deep concentration flow.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

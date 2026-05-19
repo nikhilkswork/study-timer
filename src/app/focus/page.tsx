@@ -68,7 +68,7 @@ export default function FocusPage() {
             <span className="text-2xl">🤫</span>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Quiet Study Sanctuary</h2>
+            <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Quiet Study Comodoro</h2>
             <p className="text-xs text-[hsl(var(--muted))] leading-relaxed">
               Start a new intention from the dashboard to activate this space.
             </p>
@@ -77,7 +77,7 @@ export default function FocusPage() {
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[hsl(var(--accent))] text-white text-xs font-semibold hover:opacity-95 active:scale-95 transition-all shadow-sm"
           >
-            ← Back to Sanctuary
+            ← Back to Comodoro
           </Link>
         </motion.div>
       </div>
