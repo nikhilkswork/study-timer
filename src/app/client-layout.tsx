@@ -26,12 +26,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const recordFocusMinutes = useStatsStore((s) => s.recordFocusMinutes);
   const tickPomodoro = useTaskStore((s) => s.tickPomodoro);
 
-  // --- FOCUS MODE ROUTE LOCKDOWN ---
-  useEffect(() => {
-    if (pomodoro.activeTaskId && pathname !== '/focus') {
-      router.replace('/focus');
-    }
-  }, [pomodoro.activeTaskId, pathname, router]);
+
 
   // --- INTERVAL TIMER ---
   useEffect(() => {

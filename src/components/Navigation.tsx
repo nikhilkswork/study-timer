@@ -2,13 +2,12 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, BarChart3, Settings, Timer } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTaskStore } from '@/stores/useTaskStore';
 
 const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/focus', icon: Timer, label: 'Focus' },
   { href: '/stats', icon: BarChart3, label: 'Stats' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
