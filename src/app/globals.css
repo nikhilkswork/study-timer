@@ -7,34 +7,34 @@
 
 /* ===== DESIGN TOKENS (HSL for flexibility) ===== */
 :root {
-  --background: 240 10% 99%;
-  --foreground: 240 10% 12%;
-  --card: 0 0% 100%;
-  --border: 240 10% 92%;
-  --border-hover: 240 10% 88%;
-  --hover: 240 10% 96%;
-  --muted: 240 5% 55%;
-  --accent: 263 80% 65%;
-  --accent-hover: 263 80% 60%;
-  --input-bg: 240 10% 96%;
+  --background: 35 25% 97%;
+  --foreground: 30 20% 20%;
+  --card: 35 20% 94%;
+  --border: 35 15% 88%;
+  --border-hover: 35 15% 80%;
+  --hover: 35 25% 95%;
+  --muted: 30 10% 48%;
+  --accent: 94 20% 45%;
+  --accent-hover: 94 25% 38%;
+  --input-bg: 35 20% 96%;
   --radius: 1.25rem;
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.04);
+  --glass: rgba(250, 248, 245, 0.8);
+  --glass-border: rgba(47, 42, 37, 0.06);
 }
 
 [data-theme="dark"] {
-  --background: 240 10% 2%;
-  --foreground: 0 0% 96%;
-  --card: 240 10% 4%;
-  --border: 240 6% 10%;
-  --border-hover: 240 6% 14%;
-  --hover: 240 10% 6%;
-  --muted: 240 5% 65%;
-  --accent: 0 0% 96%;
-  --accent-hover: 0 0% 85%;
-  --input-bg: 240 10% 3%;
-  --glass: rgba(4, 4, 8, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.04);
+  --background: 100 10% 8%;
+  --foreground: 35 25% 90%;
+  --card: 100 8% 12%;
+  --border: 100 6% 18%;
+  --border-hover: 100 6% 24%;
+  --hover: 100 8% 14%;
+  --muted: 30 8% 65%;
+  --accent: 94 28% 68%;
+  --accent-hover: 94 28% 76%;
+  --input-bg: 100 10% 7%;
+  --glass: rgba(20, 24, 18, 0.85);
+  --glass-border: rgba(236, 230, 220, 0.05);
 }
 
 @theme inline {

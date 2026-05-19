@@ -15,10 +15,10 @@ const navItems = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const isRunning = useTaskStore((s) => s.pomodoro.isRunning);
+  const activeTaskId = useTaskStore((s) => s.pomodoro.activeTaskId);
 
-  // Hide nav in focus mode when timer is running
-  if (pathname === '/focus' && isRunning) return null;
+  // Hide nav in focus mode when studying
+  if (activeTaskId !== null) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 md:top-0 md:bottom-auto">

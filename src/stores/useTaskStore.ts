@@ -10,9 +10,21 @@ interface TaskStore {
   lastResetDate: string;
   pomodoro: PomodoroState;
 
+  // Study entry setup state
+  setupStep: 'subject' | 'split' | 'countdown' | 'inactive';
+  setupSubject: string;
+  setupSplit: 25 | 50;
+
+  // Study entry setup actions
+  setSetupStep: (step: 'subject' | 'split' | 'countdown' | 'inactive') => void;
+  setSetupSubject: (subject: string) => void;
+  setSetupSplit: (split: 25 | 50) => void;
+  startStudySession: () => void;
+  exitStudySession: () => void;
+
   // Task CRUD
-  addTask: (title: string, totalDuration: number, isInfinite?: boolean) => void;
-  editTask: (id: string, title: string, totalDuration: number, isInfinite?: boolean) => void;
+  addTask: (title: string, totalDuration: number, isInfinite?: boolean, isInfiniteLoop?: boolean) => void;
+  editTask: (id: string, title: string, totalDuration: number, isInfinite?: boolean, isInfiniteLoop?: boolean) => void;
   deleteTask: (id: string) => void;
   completeTask: (id: string) => void;
   updateTaskProgress: (id: string, elapsedSeconds: number, pomodorosCompleted: number) => void;
@@ -28,7 +40,7 @@ interface TaskStore {
   pausePomodoro: () => void;
   resumePomodoro: () => void;
   stopPomodoro: () => void;
-  tickPomodoro: (delta?: number) => void;
+  tickPomodoro: () => void;
   skipBreak: (focusDuration: number) => void;
   startBreak: (breakDuration: number) => void;
   startNextFocus: (focusDuration: number) => void;
@@ -39,27 +51,113 @@ interface TaskStore {
   resetTasks: () => void;
 }
 
+const initialPomodoro: PomodoroState = {
+  activeTaskId: null,
+  sessionType: 'focus',
+  isRunning: false,
+  currentPomodoro: 0,
+  isInfinite: false,
+  isInfiniteLoop: false,
+  startTime: null,
+  targetEndTime: null,
+  pausedAt: null,
+  focusDuration: 25,
+  breakDuration: 5,
+  baseElapsed: 0,
+  baseRemaining: 1500,
+  elapsedSeconds: 0,
+  remainingSeconds: 1500,
+};
+
 export const useTaskStore = create<TaskStore>()(
   persist(
     (set, get) => ({
       tasks: [],
       lastResetDate: getTodayKey(),
-      pomodoro: {
-        activeTaskId: null,
-        sessionType: 'focus',
-        isRunning: false,
-        currentPomodoro: 0,
-        isInfinite: false,
-        isInfiniteLoop: false,
-        startTime: null,
-        targetEndTime: null,
-        pausedAt: null,
-        focusDuration: 25,
-        breakDuration: 5,
+      pomodoro: { ...initialPomodoro },
+
+      // Study Setup state defaults (default to 'subject' on fresh entries)
+      setupStep: 'subject',
+      setupSubject: '',
+      setupSplit: 25,
+
+      setSetupStep: (step) => set({ setupStep: step }),
+      setSetupSubject: (subject) => set({ setupSubject: subject }),
+      setSetupSplit: (split) => set({ setupSplit: split }),
+
+      startStudySession: () => {
+        const { setupSubject, setupSplit } = get();
+        const taskId = generateId();
+        const focusDuration = setupSplit;
+        const breakDuration = setupSplit === 25 ? 5 : 10;
+        
+        const newTask: Task = {
+          id: taskId,
+          title: setupSubject.trim() || 'No Subject',
+          totalDuration: focusDuration,
+          elapsedTime: 0,
+          completed: false,
+          createdAt: new Date().toISOString(),
+          pomodorosCompleted: 0,
+          pomodorosTotal: 0,
+        };
+
+        set((state) => ({
+          tasks: [...state.tasks, newTask],
+          setupStep: 'inactive',
+        }));
+
+        const now = Date.now();
+        const secs = focusDuration * 60;
+        set({
+          pomodoro: {
+            activeTaskId: taskId,
+            sessionType: 'focus',
+            isRunning: true,
+            currentPomodoro: 1,
+            isInfinite: false,
+            isInfiniteLoop: true,
+            startTime: now,
+            targetEndTime: now + secs * 1000,
+            pausedAt: null,
+            focusDuration,
+            breakDuration,
+            baseElapsed: 0,
+            baseRemaining: secs,
+            elapsedSeconds: 0,
+            remainingSeconds: secs,
+          },
+        });
       },
 
-      addTask: (title, totalDuration, isInfinite = false) => {
-        const focusDuration = 25; // default, can be overridden
+      exitStudySession: () => {
+        const { pomodoro, tasks } = get();
+        if (pomodoro.activeTaskId) {
+          const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
+          if (activeTask) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === activeTask.id
+                  ? {
+                      ...t,
+                      completed: true,
+                      completedAt: new Date().toISOString(),
+                    }
+                  : t
+              ),
+            }));
+          }
+        }
+
+        set({
+          pomodoro: { ...initialPomodoro },
+          setupStep: 'inactive',
+          setupSubject: '',
+        });
+      },
+
+      addTask: (title, totalDuration, isInfinite = false, isInfiniteLoop = false) => {
+        const focusDuration = 25;
         set((state) => ({
           tasks: [
             ...state.tasks,
@@ -73,12 +171,13 @@ export const useTaskStore = create<TaskStore>()(
               pomodorosCompleted: 0,
               pomodorosTotal: isInfinite ? 0 : calculatePomodorosNeeded(totalDuration, focusDuration),
               isInfinite,
+              isInfiniteLoop,
             },
           ],
         }));
       },
 
-      editTask: (id, title, totalDuration, isInfinite = false) => {
+      editTask: (id, title, totalDuration, isInfinite = false, isInfiniteLoop = false) => {
         set((state) => ({
           tasks: state.tasks.map((t) =>
             t.id === id
@@ -88,6 +187,7 @@ export const useTaskStore = create<TaskStore>()(
                   totalDuration: isInfinite ? 0 : totalDuration,
                   pomodorosTotal: isInfinite ? 0 : calculatePomodorosNeeded(totalDuration, 25),
                   isInfinite,
+                  isInfiniteLoop,
                 }
               : t
           ),
@@ -100,19 +200,7 @@ export const useTaskStore = create<TaskStore>()(
           tasks: state.tasks.filter((t) => t.id !== id),
           pomodoro:
             pomodoro.activeTaskId === id
-              ? {
-                  activeTaskId: null,
-                  sessionType: 'focus' as const,
-                  isRunning: false,
-                  currentPomodoro: 0,
-                  isInfinite: false,
-                  isInfiniteLoop: false,
-                  startTime: null,
-                  targetEndTime: null,
-                  pausedAt: null,
-                  focusDuration: 25,
-                  breakDuration: 5,
-                }
+              ? { ...initialPomodoro }
               : state.pomodoro,
         }));
       },
@@ -126,19 +214,7 @@ export const useTaskStore = create<TaskStore>()(
           ),
           pomodoro:
             state.pomodoro.activeTaskId === id
-              ? {
-                  activeTaskId: null,
-                  sessionType: 'focus' as const,
-                  isRunning: false,
-                  currentPomodoro: 0,
-                  isInfinite: false,
-                  isInfiniteLoop: false,
-                  startTime: null,
-                  targetEndTime: null,
-                  pausedAt: null,
-                  focusDuration: 25,
-                  breakDuration: 5,
-                }
+              ? { ...initialPomodoro }
               : state.pomodoro,
         }));
       },
@@ -153,6 +229,7 @@ export const useTaskStore = create<TaskStore>()(
 
       startPomodoro: (taskId, focusDuration, isInfinite = false, isInfiniteLoop = false, breakDuration = 5) => {
         const now = Date.now();
+        const secs = focusDuration * 60;
         set({
           pomodoro: {
             activeTaskId: taskId,
@@ -162,10 +239,14 @@ export const useTaskStore = create<TaskStore>()(
             isInfinite,
             isInfiniteLoop,
             startTime: now,
-            targetEndTime: isInfinite ? null : now + focusDuration * 60 * 1000,
+            targetEndTime: isInfinite ? null : now + secs * 1000,
             pausedAt: null,
             focusDuration,
             breakDuration,
+            baseElapsed: 0,
+            baseRemaining: isInfinite ? 0 : secs,
+            elapsedSeconds: 0,
+            remainingSeconds: isInfinite ? 0 : secs,
           },
         });
       },
@@ -178,26 +259,23 @@ export const useTaskStore = create<TaskStore>()(
             ...pomodoro,
             isRunning: false,
             pausedAt: Date.now(),
+            baseElapsed: pomodoro.elapsedSeconds,
+            baseRemaining: pomodoro.remainingSeconds,
+            startTime: null,
           },
         });
       },
 
       resumePomodoro: () => {
         const { pomodoro } = get();
-        if (pomodoro.isRunning || !pomodoro.pausedAt) return;
+        if (pomodoro.isRunning) return;
         
         const now = Date.now();
-        const pausedDuration = now - pomodoro.pausedAt;
-        
-        const newStartTime = pomodoro.startTime ? pomodoro.startTime + pausedDuration : now;
-        const newTargetEndTime = pomodoro.targetEndTime ? pomodoro.targetEndTime + pausedDuration : null;
-
         set({
           pomodoro: {
             ...pomodoro,
             isRunning: true,
-            startTime: newStartTime,
-            targetEndTime: newTargetEndTime,
+            startTime: now,
             pausedAt: null,
           },
         });
@@ -205,19 +283,18 @@ export const useTaskStore = create<TaskStore>()(
 
       stopPomodoro: () => {
         const { pomodoro, tasks } = get();
-        if (pomodoro.activeTaskId && pomodoro.startTime && pomodoro.sessionType === 'focus') {
+        if (pomodoro.activeTaskId && pomodoro.sessionType === 'focus') {
           const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
           if (activeTask) {
-            const now = pomodoro.pausedAt || Date.now();
-            const elapsedSeconds = Math.max(0, Math.floor((now - pomodoro.startTime) / 1000));
-            if (elapsedSeconds > 0) {
+            const elapsedSecs = pomodoro.elapsedSeconds;
+            if (elapsedSecs > 0) {
               set((state) => ({
                 tasks: state.tasks.map((t) =>
                   t.id === activeTask.id
                     ? {
                         ...t,
-                        elapsedTime: t.elapsedTime + elapsedSeconds,
-                        pomodorosCompleted: t.pomodorosCompleted + (pomodoro.isInfinite ? 0 : Math.floor(elapsedSeconds / (pomodoro.focusDuration * 60))),
+                        elapsedTime: t.elapsedTime + elapsedSecs,
+                        pomodorosCompleted: t.pomodorosCompleted + (pomodoro.isInfinite ? 0 : Math.floor(elapsedSecs / (pomodoro.focusDuration * 60))),
                       }
                     : t
                 ),
@@ -226,39 +303,46 @@ export const useTaskStore = create<TaskStore>()(
           }
         }
 
-        set({
-          pomodoro: {
-            activeTaskId: null,
-            sessionType: 'focus',
-            isRunning: false,
-            currentPomodoro: 0,
-            isInfinite: false,
-            isInfiniteLoop: false,
-            startTime: null,
-            targetEndTime: null,
-            pausedAt: null,
-            focusDuration: 25,
-            breakDuration: 5,
-          },
-        });
+        set({ pomodoro: { ...initialPomodoro } });
       },
 
-      tickPomodoro: (delta = 1) => {
-        // Timestamp-driven ticks are handled visual-only in components.
-        // This is a no-op in the store to eliminate global parent-level re-render storms!
+      tickPomodoro: () => {
+        const { pomodoro } = get();
+        if (!pomodoro.isRunning || !pomodoro.startTime) return;
+
+        const now = Date.now();
+        const deltaSecs = Math.floor((now - pomodoro.startTime) / 1000);
+        
+        const elapsedSeconds = pomodoro.baseElapsed + deltaSecs;
+        const remainingSeconds = pomodoro.isInfinite
+          ? 0
+          : Math.max(0, pomodoro.baseRemaining - deltaSecs);
+
+        set({
+          pomodoro: {
+            ...pomodoro,
+            elapsedSeconds,
+            remainingSeconds,
+          },
+        });
       },
 
       skipBreak: (focusDuration) => {
         const { pomodoro } = get();
         const now = Date.now();
+        const secs = focusDuration * 60;
         set({
           pomodoro: {
             ...pomodoro,
             sessionType: 'focus',
             startTime: now,
-            targetEndTime: pomodoro.isInfinite ? null : now + focusDuration * 60 * 1000,
+            targetEndTime: pomodoro.isInfinite ? null : now + secs * 1000,
             pausedAt: null,
             isRunning: true,
+            baseElapsed: 0,
+            baseRemaining: pomodoro.isInfinite ? 0 : secs,
+            elapsedSeconds: 0,
+            remainingSeconds: pomodoro.isInfinite ? 0 : secs,
           },
         });
       },
@@ -266,14 +350,19 @@ export const useTaskStore = create<TaskStore>()(
       startBreak: (breakDuration) => {
         const { pomodoro } = get();
         const now = Date.now();
+        const secs = breakDuration * 60;
         set({
           pomodoro: {
             ...pomodoro,
             sessionType: 'break',
             startTime: now,
-            targetEndTime: now + breakDuration * 60 * 1000,
+            targetEndTime: now + secs * 1000,
             pausedAt: null,
             isRunning: true,
+            baseElapsed: 0,
+            baseRemaining: secs,
+            elapsedSeconds: 0,
+            remainingSeconds: secs,
           },
         });
       },
@@ -281,21 +370,27 @@ export const useTaskStore = create<TaskStore>()(
       startNextFocus: (focusDuration) => {
         const { pomodoro } = get();
         const now = Date.now();
+        const secs = focusDuration * 60;
         set({
           pomodoro: {
             ...pomodoro,
             sessionType: 'focus',
             currentPomodoro: pomodoro.currentPomodoro + 1,
             startTime: now,
-            targetEndTime: pomodoro.isInfinite ? null : now + focusDuration * 60 * 1000,
+            targetEndTime: pomodoro.isInfinite ? null : now + secs * 1000,
             pausedAt: null,
             isRunning: true,
+            baseElapsed: 0,
+            baseRemaining: pomodoro.isInfinite ? 0 : secs,
+            elapsedSeconds: 0,
+            remainingSeconds: pomodoro.isInfinite ? 0 : secs,
           },
         });
       },
 
       resetPomodoro: () => {
         const { pomodoro } = get();
+        const secs = pomodoro.focusDuration * 60;
         set({
           pomodoro: {
             ...pomodoro,
@@ -303,6 +398,10 @@ export const useTaskStore = create<TaskStore>()(
             startTime: null,
             targetEndTime: null,
             pausedAt: null,
+            baseElapsed: 0,
+            baseRemaining: pomodoro.isInfinite ? 0 : secs,
+            elapsedSeconds: 0,
+            remainingSeconds: pomodoro.isInfinite ? 0 : secs,
           },
         });
       },
@@ -320,19 +419,7 @@ export const useTaskStore = create<TaskStore>()(
               elapsedTime: 0,
               pomodorosCompleted: 0,
             })),
-            pomodoro: {
-              activeTaskId: null,
-              sessionType: 'focus' as const,
-              isRunning: false,
-              currentPomodoro: 0,
-              isInfinite: false,
-              isInfiniteLoop: false,
-              startTime: null,
-              targetEndTime: null,
-              pausedAt: null,
-              focusDuration: 25,
-              breakDuration: 5,
-            },
+            pomodoro: { ...initialPomodoro },
           }));
         }
       },
@@ -341,19 +428,7 @@ export const useTaskStore = create<TaskStore>()(
         set({
           tasks: [],
           lastResetDate: getTodayKey(),
-          pomodoro: {
-            activeTaskId: null,
-            sessionType: 'focus',
-            isRunning: false,
-            currentPomodoro: 0,
-            isInfinite: false,
-            isInfiniteLoop: false,
-            startTime: null,
-            targetEndTime: null,
-            pausedAt: null,
-            focusDuration: 25,
-            breakDuration: 5,
-          },
+          pomodoro: { ...initialPomodoro },
         });
       },
     }),

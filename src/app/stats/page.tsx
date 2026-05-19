@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Clock, CheckCircle2, TrendingUp, Calendar } from 'lucide-react';
+import { Flame, Clock, CheckCircle2, Calendar } from 'lucide-react';
 import { useStatsStore } from '@/stores/useStatsStore';
 import { WeeklyChart } from '@/components/WeeklyChart';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -10,17 +10,18 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 export default function StatsPage() {
   const [mounted, setMounted] = useState(false);
   const currentStreak = useStatsStore((s) => s.currentStreak);
-  const longestStreak = useStatsStore((s) => s.longestStreak);
   const totalFocusMinutes = useStatsStore((s) => s.totalFocusMinutes);
   const totalCompletedTasks = useStatsStore((s) => s.totalCompletedTasks);
   const weeklyData = useStatsStore((s) => s.weeklyData);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!mounted) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[hsl(var(--accent))] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -29,54 +30,107 @@ export default function StatsPage() {
   const todayData = weeklyData[weeklyData.length - 1];
 
   const statCards = [
-    { icon: Flame, label: 'Current Streak', value: `${currentStreak}`, unit: 'days', color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { icon: TrendingUp, label: 'Best Streak', value: `${longestStreak}`, unit: 'days', color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    { icon: Clock, label: 'Total Focus', value: focusHours, unit: 'hours', color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { icon: CheckCircle2, label: 'Tasks Done', value: `${totalCompletedTasks}`, unit: 'total', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    {
+      icon: Flame,
+      label: 'Focus Streak',
+      value: `${currentStreak}`,
+      unit: 'days',
+      bg: 'bg-[hsl(var(--accent))]/10',
+      color: 'text-[hsl(var(--accent))]',
+    },
+    {
+      icon: Clock,
+      label: 'Total Focus',
+      value: focusHours,
+      unit: 'hours',
+      bg: 'bg-[hsl(var(--accent))]/10',
+      color: 'text-[hsl(var(--accent))]',
+    },
+    {
+      icon: CheckCircle2,
+      label: 'Sessions Completed',
+      value: `${totalCompletedTasks}`,
+      unit: 'sessions',
+      bg: 'bg-[hsl(var(--accent))]/10',
+      color: 'text-[hsl(var(--accent))]',
+    },
   ];
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-md mx-auto px-6 py-12 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Statistics</h1>
-          <p className="text-sm text-[var(--muted)] mt-0.5">Your focus journey</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">Stats</h1>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-[hsl(var(--muted))] mt-1">Focus & consistency log</p>
         </div>
         <ThemeToggle />
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="p-5 rounded-2xl bg-gradient-to-br from-[var(--accent)]/10 to-[var(--accent)]/5 border border-[var(--accent)]/20">
-        <div className="flex items-center gap-2 mb-3">
-          <Calendar size={16} className="text-[var(--accent)]" />
-          <span className="text-sm font-semibold text-[var(--foreground)]">Today</span>
+      {/* Today's Stats Summary */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] space-y-4"
+      >
+        <div className="flex items-center gap-2 text-[hsl(var(--muted))]">
+          <Calendar size={15} />
+          <span className="text-xs font-bold uppercase tracking-wider">Today&apos;s Focus</span>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-2xl font-bold text-[var(--foreground)]">{todayData?.focusMinutes || 0}m</p>
-            <p className="text-xs text-[var(--muted)]">Focus time</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {todayData?.focusMinutes || 0}m
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--muted))] mt-1 opacity-70">Focus Time</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-[var(--foreground)]">{todayData?.completedTasks || 0}</p>
-            <p className="text-xs text-[var(--muted)]">Tasks completed</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {todayData?.completedTasks || 0}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--muted))] mt-1 opacity-70">Sessions Logged</p>
           </div>
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Grid of stats */}
+      <div className="grid grid-cols-1 gap-4">
         {statCards.map((card, i) => (
-          <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="p-4 rounded-2xl bg-[var(--card)] border border-[var(--border)]">
-            <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center mb-2`}>
-              <card.icon size={16} className={card.color} />
+          <motion.div
+            key={card.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="p-5 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-2xl ${card.bg} flex items-center justify-center`}>
+                <card.icon size={18} className={card.color} />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted))] opacity-70">
+                  {card.label}
+                </p>
+                <p className="text-xs text-[hsl(var(--muted))] font-medium mt-0.5">
+                  {card.unit}
+                </p>
+              </div>
             </div>
-            <p className="text-2xl font-bold text-[var(--foreground)]">{card.value}</p>
-            <p className="text-xs text-[var(--muted)]">{card.unit} · {card.label}</p>
+            <p className="text-3xl font-semibold text-[hsl(var(--foreground))] font-mono">
+              {card.value}
+            </p>
           </motion.div>
         ))}
       </div>
 
-      <WeeklyChart />
+      {/* Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <WeeklyChart />
+      </motion.div>
     </div>
   );
 }

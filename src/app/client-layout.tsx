@@ -3,89 +3,78 @@
 import { Navigation } from '@/components/Navigation';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAmbientSoundSync } from '@/hooks/useAmbientSoundSync';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { useEffect, useRef } from 'react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useStatsStore } from '@/stores/useStatsStore';
-import { playNotificationSound, playCompletionSound } from '@/lib/audio';
+import { playNotificationSound } from '@/lib/audio';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   useAmbientSoundSync();
 
   const pomodoro = useTaskStore((s) => s.pomodoro);
-  const tasks = useTaskStore((s) => s.tasks);
   const startBreak = useTaskStore((s) => s.startBreak);
   const startNextFocus = useTaskStore((s) => s.startNextFocus);
-  const stopPomodoro = useTaskStore((s) => s.stopPomodoro);
-  const completeTask = useTaskStore((s) => s.completeTask);
   const updateTaskProgress = useTaskStore((s) => s.updateTaskProgress);
 
-  const focusDuration = useSettingsStore((s) => s.focusDuration);
-  const breakDuration = useSettingsStore((s) => s.breakDuration);
   const notificationSound = useSettingsStore((s) => s.notificationSound);
-
   const recordFocusMinutes = useStatsStore((s) => s.recordFocusMinutes);
-  const recordTaskCompletion = useStatsStore((s) => s.recordTaskCompletion);
+  const tickPomodoro = useTaskStore((s) => s.tickPomodoro);
 
-  const lastCommittedRef = useRef(0);
-
-  // Sync / Reset committed seconds on start/stop/pause
+  // --- FOCUS MODE ROUTE LOCKDOWN ---
   useEffect(() => {
-    if (!pomodoro.isRunning) {
-      lastCommittedRef.current = 0;
+    if (pomodoro.activeTaskId && pathname !== '/focus') {
+      router.replace('/focus');
     }
-  }, [pomodoro.isRunning, pomodoro.startTime]);
+  }, [pomodoro.activeTaskId, pathname, router]);
 
+  // --- INTERVAL TIMER ---
   useEffect(() => {
-    if (!pomodoro.isRunning || !pomodoro.activeTaskId) return;
+    if (!pomodoro.isRunning) return;
 
     const interval = setInterval(() => {
-      const now = Date.now();
-      const activeTask = useTaskStore.getState().tasks.find((t) => t.id === pomodoro.activeTaskId);
-      if (!activeTask) return;
+      // 1. Tick the store state to update live seconds
+      tickPomodoro();
 
-      if (pomodoro.isInfinite) {
-        // --- INFINITE COUNT-UP PROGRESS AUTO-COMMIT ENGINE (Once a minute) ---
-        const totalElapsed = Math.floor((now - (pomodoro.startTime || now)) / 1000);
-        const delta = totalElapsed - lastCommittedRef.current;
-        if (delta >= 60) {
-          const focusMins = Math.floor(delta / 60);
-          if (focusMins > 0) recordFocusMinutes(focusMins);
-          updateTaskProgress(activeTask.id, activeTask.elapsedTime + delta, activeTask.pomodorosCompleted);
-          lastCommittedRef.current = totalElapsed;
+      // 2. Fetch fresh state for transitions
+      const currentPomodoro = useTaskStore.getState().pomodoro;
+      const activeTask = useTaskStore.getState().tasks.find((t) => t.id === currentPomodoro.activeTaskId);
+
+      // 3. Live increment elapsed seconds for focus phase
+      if (currentPomodoro.sessionType === 'focus' && activeTask) {
+        const newElapsed = activeTask.elapsedTime + 1;
+        updateTaskProgress(activeTask.id, newElapsed, activeTask.pomodorosCompleted);
+
+        // Every 60 seconds of focus, record 1 minute to stats
+        if (newElapsed > 0 && newElapsed % 60 === 0) {
+          recordFocusMinutes(1);
         }
-      } else {
-        // --- COUNTDOWN EXPIRY ENGINE ---
-        if (pomodoro.targetEndTime && now >= pomodoro.targetEndTime) {
-          if (pomodoro.sessionType === 'focus') {
-            recordFocusMinutes(focusDuration);
-            const newElapsed = activeTask.elapsedTime + focusDuration * 60;
+      }
+
+      // 4. Expiry transitions
+      if (currentPomodoro.remainingSeconds <= 0) {
+        if (currentPomodoro.sessionType === 'focus') {
+          if (activeTask) {
+            // Log completed pomodoro count
             const newPomodoros = activeTask.pomodorosCompleted + 1;
-            updateTaskProgress(activeTask.id, newElapsed, newPomodoros);
-
-            if (!activeTask.isInfinite && newElapsed >= activeTask.totalDuration * 60) {
-              completeTask(activeTask.id);
-              recordTaskCompletion();
-              if (notificationSound) playCompletionSound();
-              stopPomodoro();
-              return;
-            }
-
-            if (notificationSound) playNotificationSound();
-            startBreak(breakDuration);
-          } else {
-            // Break is over!
-            if (notificationSound) playNotificationSound();
-            if (pomodoro.isInfiniteLoop) {
-              startNextFocus(focusDuration);
-            } else {
-              stopPomodoro();
-            }
+            updateTaskProgress(activeTask.id, activeTask.elapsedTime, newPomodoros);
           }
+
+          if (notificationSound) {
+            playNotificationSound();
+          }
+          startBreak(currentPomodoro.breakDuration);
+        } else {
+          // Break is over
+          if (notificationSound) {
+            playNotificationSound();
+          }
+          startNextFocus(currentPomodoro.focusDuration);
         }
       }
     }, 1000);
@@ -93,22 +82,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [
     pomodoro.isRunning,
-    pomodoro.activeTaskId,
-    pomodoro.isInfinite,
-    pomodoro.sessionType,
-    pomodoro.targetEndTime,
-    pomodoro.startTime,
-    pomodoro.isInfiniteLoop,
-    focusDuration,
-    breakDuration,
-    notificationSound,
+    tickPomodoro,
     recordFocusMinutes,
-    recordTaskCompletion,
     updateTaskProgress,
-    completeTask,
     startBreak,
     startNextFocus,
-    stopPomodoro,
+    notificationSound,
   ]);
 
   return (

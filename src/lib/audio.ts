@@ -4,6 +4,9 @@ let audioContext: AudioContext | null = null;
 let ambientNodes: AudioNode[] = [];
 let ambientGain: GainNode | null = null;
 
+let cafeInterval: ReturnType<typeof setInterval> | null = null;
+let forestInterval: ReturnType<typeof setInterval> | null = null;
+
 function getAudioContext(): AudioContext {
   if (!audioContext || audioContext.state === 'closed') {
     audioContext = new AudioContext();
@@ -115,7 +118,6 @@ function createPinkNoise(ctx: AudioContext): AudioBuffer {
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
 
-  // Voss-McCartney algorithm for pink noise
   let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
   for (let i = 0; i < bufferSize; i++) {
     const white = Math.random() * 2 - 1;
@@ -126,7 +128,7 @@ function createPinkNoise(ctx: AudioContext): AudioBuffer {
     b4 = 0.55000 * b4 + white * 0.5329522;
     b5 = -0.7616 * b5 - white * 0.0168980;
     data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-    data[i] *= 0.11; // compensation
+    data[i] *= 0.11;
     b6 = white * 0.115926;
   }
   return buffer;
@@ -135,7 +137,6 @@ function createPinkNoise(ctx: AudioContext): AudioBuffer {
 function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
   const nodes: AudioNode[] = [];
 
-  // 1. The Main Wash (Pink Noise) - Natural and soft
   const washBuffer = createPinkNoise(ctx);
   const washSource = ctx.createBufferSource();
   washSource.buffer = washBuffer;
@@ -151,9 +152,8 @@ function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
   washSource.start();
   nodes.push(washSource, washFilter);
 
-  // 2. The Patter (High-passed grains) - Simulates droplets
   const patterSource = ctx.createBufferSource();
-  patterSource.buffer = washBuffer; // reuse pink noise but filter differently
+  patterSource.buffer = washBuffer;
   patterSource.loop = true;
 
   const patterFilter = ctx.createBiquadFilter();
@@ -163,7 +163,6 @@ function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
   const patterGain = ctx.createGain();
   patterGain.gain.value = 0.15;
 
-  // LFO for natural volume fluctuations (wind/gusts)
   const lfo = ctx.createOscillator();
   const lfoGain = ctx.createGain();
   lfo.type = 'sine';
@@ -180,7 +179,6 @@ function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
   patterSource.start();
   nodes.push(patterSource, patterFilter, patterGain, lfo, lfoGain);
 
-  // 3. The Atmosphere (Low Rumble) - Distant storm feel
   const rumbleBuffer = ctx.createBuffer(1, 2 * ctx.sampleRate, ctx.sampleRate);
   const rumbleData = rumbleBuffer.getChannelData(0);
   let lastOut = 0;
@@ -211,42 +209,127 @@ function createRainSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
   return nodes;
 }
 
-function createLofiSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
-  // Warm filtered noise with subtle oscillation
-  const bufferSize = 2 * ctx.sampleRate;
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-
-  let lastOut = 0;
-  for (let i = 0; i < bufferSize; i++) {
-    const white = Math.random() * 2 - 1;
-    data[i] = (lastOut + 0.1 * white) / 1.1;
-    lastOut = data[i];
-  }
-
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-
+function createCafeSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
+  const nodes: AudioNode[] = [];
+  
+  // 1. Murmur (pink noise with bandpass/lowpass filtering)
+  const murmurBuffer = createPinkNoise(ctx);
+  const murmurSource = ctx.createBufferSource();
+  murmurSource.buffer = murmurBuffer;
+  murmurSource.loop = true;
+  
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 800;
-  filter.Q.value = 1;
+  filter.frequency.value = 600;
+  
+  murmurSource.connect(filter);
+  filter.connect(gain);
+  murmurSource.start();
+  nodes.push(murmurSource, filter);
+  
+  // 2. Random cup/plate clinks
+  if (cafeInterval) clearInterval(cafeInterval);
+  cafeInterval = setInterval(() => {
+    try {
+      if (ctx.state === 'closed') return;
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      
+      osc.connect(oscGain);
+      oscGain.connect(gain);
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1600 + Math.random() * 900, ctx.currentTime);
+      
+      oscGain.gain.setValueAtTime(0, ctx.currentTime);
+      oscGain.gain.linearRampToValueAtTime(0.015 + Math.random() * 0.02, ctx.currentTime + 0.005);
+      oscGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.13);
+      
+      setTimeout(() => {
+        try {
+          osc.disconnect();
+          oscGain.disconnect();
+        } catch {}
+      }, 200);
+    } catch {}
+  }, 3500 + Math.random() * 4000);
+  
+  return nodes;
+}
 
-  // Subtle LFO for warmth
+function createForestSound(ctx: AudioContext, gain: GainNode): AudioNode[] {
+  const nodes: AudioNode[] = [];
+  
+  // 1. Rustling leaves / wind (Pink noise low-passed with LFO modulating frequency)
+  const leavesBuffer = createPinkNoise(ctx);
+  const leavesSource = ctx.createBufferSource();
+  leavesSource.buffer = leavesBuffer;
+  leavesSource.loop = true;
+  
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 350;
+  
   const lfo = ctx.createOscillator();
   const lfoGain = ctx.createGain();
-  lfo.frequency.value = 0.1;
-  lfoGain.gain.value = 200;
+  lfo.frequency.value = 0.06;
+  lfoGain.gain.value = 120;
+  
   lfo.connect(lfoGain);
   lfoGain.connect(filter.frequency);
   lfo.start();
-
-  source.connect(filter);
+  
+  leavesSource.connect(filter);
   filter.connect(gain);
-  source.start();
-
-  return [source, filter, lfo, lfoGain];
+  leavesSource.start();
+  nodes.push(leavesSource, filter, lfo, lfoGain);
+  
+  // 2. Random bird chirps
+  if (forestInterval) clearInterval(forestInterval);
+  forestInterval = setInterval(() => {
+    try {
+      if (ctx.state === 'closed') return;
+      const now = ctx.currentTime;
+      
+      const chirpsCount = Math.random() > 0.5 ? 2 : 1;
+      for (let i = 0; i < chirpsCount; i++) {
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        
+        osc.connect(oscGain);
+        oscGain.connect(gain);
+        
+        osc.type = 'sine';
+        const startFreq = 2200 + Math.random() * 600;
+        const endFreq = startFreq + 900;
+        
+        const chirpStart = now + i * 0.15;
+        const chirpDuration = 0.07;
+        
+        osc.frequency.setValueAtTime(startFreq, chirpStart);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, chirpStart + chirpDuration);
+        
+        oscGain.gain.setValueAtTime(0, chirpStart);
+        oscGain.gain.linearRampToValueAtTime(0.01, chirpStart + 0.008);
+        oscGain.gain.exponentialRampToValueAtTime(0.0001, chirpStart + chirpDuration);
+        
+        osc.start(chirpStart);
+        osc.stop(chirpStart + chirpDuration + 0.02);
+        
+        setTimeout(() => {
+          try {
+            osc.disconnect();
+            oscGain.disconnect();
+          } catch {}
+        }, (i * 150) + 150);
+      }
+    } catch {}
+  }, 6000 + Math.random() * 6000);
+  
+  return nodes;
 }
 
 export function startAmbientSound(type: AmbientSound, volume: number): void {
@@ -257,7 +340,6 @@ export function startAmbientSound(type: AmbientSound, volume: number): void {
     const ctx = getAudioContext();
     ambientGain = ctx.createGain();
     
-    // Start with 0 volume for fade-in
     ambientGain.gain.setValueAtTime(0, ctx.currentTime);
     ambientGain.gain.linearRampToValueAtTime(volume * 0.5, ctx.currentTime + 1.2);
     
@@ -270,8 +352,11 @@ export function startAmbientSound(type: AmbientSound, volume: number): void {
       case 'brownNoise':
         ambientNodes = createBrownNoise(ctx, ambientGain);
         break;
-      case 'lofi':
-        ambientNodes = createLofiSound(ctx, ambientGain);
+      case 'cafe':
+        ambientNodes = createCafeSound(ctx, ambientGain);
+        break;
+      case 'forest':
+        ambientNodes = createForestSound(ctx, ambientGain);
         break;
     }
   } catch {
@@ -281,8 +366,17 @@ export function startAmbientSound(type: AmbientSound, volume: number): void {
 
 export function stopAmbientSound(): void {
   const ctx = audioContext;
+  
+  if (cafeInterval) {
+    clearInterval(cafeInterval);
+    cafeInterval = null;
+  }
+  if (forestInterval) {
+    clearInterval(forestInterval);
+    forestInterval = null;
+  }
+
   if (ambientGain && ctx) {
-    // Fade out before stopping
     const currentGain = ambientGain.gain.value;
     ambientGain.gain.cancelScheduledValues(ctx.currentTime);
     ambientGain.gain.setValueAtTime(currentGain, ctx.currentTime);
@@ -322,5 +416,50 @@ export function stopAmbientSound(): void {
 export function setAmbientVolume(volume: number): void {
   if (ambientGain) {
     ambientGain.gain.value = volume * 0.5;
+  }
+}
+
+export function playCountdownTickSound(): void {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.06);
+  } catch {
+    // Audio not available
+  }
+}
+
+export function playCountdownStartSound(): void {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
+    
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch {
+    // Audio not available
   }
 }

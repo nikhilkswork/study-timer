@@ -10,7 +10,6 @@ interface ProgressRingProps {
   className?: string;
   children?: React.ReactNode;
   color?: string;
-  isRippling?: boolean;
 }
 
 export function ProgressRing({
@@ -20,13 +19,10 @@ export function ProgressRing({
   className,
   children,
   color,
-  isRippling = false,
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (progress / 100) * circumference;
-
-
 
   return (
     <div className={cn('relative inline-flex items-center justify-center', className)}>
@@ -52,51 +48,6 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           className="opacity-[0.06]"
         />
-
-        {/* --- Ripple Effects --- */}
-        {isRippling && (
-          <>
-            <motion.circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={color || 'hsl(var(--accent))'}
-              strokeWidth={strokeWidth * 0.5}
-              initial={{ scale: 1, opacity: 0.3 }}
-              animate={{ scale: 1.15, opacity: 0 }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeOut", delay: 0 }}
-              style={{ willChange: 'transform' }}
-              className="origin-center blur-[2px]"
-            />
-            <motion.circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={color || 'hsl(var(--accent))'}
-              strokeWidth={strokeWidth * 0.3}
-              initial={{ scale: 1, opacity: 0.2 }}
-              animate={{ scale: 1.25, opacity: 0 }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeOut", delay: 1.3 }}
-              style={{ willChange: 'transform' }}
-              className="origin-center blur-[4px]"
-            />
-            <motion.circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={color || 'hsl(var(--accent))'}
-              strokeWidth={strokeWidth * 0.2}
-              initial={{ scale: 1, opacity: 0.1 }}
-              animate={{ scale: 1.35, opacity: 0 }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeOut", delay: 2.6 }}
-              style={{ willChange: 'transform' }}
-              className="origin-center blur-[6px]"
-            />
-          </>
-        )}
         
         {/* Progress ring glow */}
         <motion.circle
@@ -137,14 +88,9 @@ export function ProgressRing({
         </defs>
       </svg>
       
-      {/* Timer content container with hardware-accelerated static glass effect */}
+      {/* Timer content container */}
       {children && (
-        <div 
-          className={cn(
-            "absolute inset-4 rounded-full flex flex-col items-center justify-center transition-all duration-1000 z-20",
-            isRippling && "glass bg-black/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.1)]"
-          )}
-        >
+        <div className="absolute inset-4 rounded-full flex flex-col items-center justify-center z-20">
           {children}
         </div>
       )}
