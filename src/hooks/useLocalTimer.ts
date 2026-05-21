@@ -2,7 +2,7 @@
 
 import { useTaskStore } from '@/stores/useTaskStore';
 
-export function useLocalTimer(props?: any) {
+export function useLocalTimer() {
   const pomodoro = useTaskStore((s) => s.pomodoro);
   const isInfinite = pomodoro.isInfinite;
 

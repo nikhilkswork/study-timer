@@ -29,7 +29,6 @@ function getEmptyWeek(): DayStats[] {
 }
 
 function ensureWeeklyDataCurrent(weeklyData: DayStats[]): DayStats[] {
-  const today = getTodayKey();
   const freshWeek = getEmptyWeek();
 
   return freshWeek.map((day) => {

@@ -3,18 +3,17 @@
 import { Navigation } from '@/components/Navigation';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAmbientSoundSync } from '@/hooks/useAmbientSoundSync';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useStatsStore } from '@/stores/useStatsStore';
-import { playNotificationSound } from '@/lib/audio';
+import { playNotificationSound, playCompletionSound } from '@/lib/audio';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   useAmbientSoundSync();
 
   const pomodoro = useTaskStore((s) => s.pomodoro);
@@ -52,24 +51,34 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       }
 
       // 4. Expiry transitions
-      if (currentPomodoro.remainingSeconds <= 0) {
-        if (currentPomodoro.sessionType === 'focus') {
-          if (activeTask) {
-            // Log completed pomodoro count
-            const newPomodoros = activeTask.pomodorosCompleted + 1;
-            updateTaskProgress(activeTask.id, activeTask.elapsedTime, newPomodoros);
-          }
-
+      if (currentPomodoro.mode !== 'stopwatch' && currentPomodoro.remainingSeconds <= 0) {
+        if (currentPomodoro.mode === 'timer') {
+          // Timer finished
           if (notificationSound) {
-            playNotificationSound();
+            playCompletionSound();
           }
-          startBreak(currentPomodoro.breakDuration);
+          const exitStudySession = useTaskStore.getState().exitStudySession;
+          exitStudySession();
         } else {
-          // Break is over
-          if (notificationSound) {
-            playNotificationSound();
+          // Pomodoro mode work/break loop
+          if (currentPomodoro.sessionType === 'focus') {
+            if (activeTask) {
+              // Log completed pomodoro count
+              const newPomodoros = activeTask.pomodorosCompleted + 1;
+              updateTaskProgress(activeTask.id, activeTask.elapsedTime, newPomodoros);
+            }
+
+            if (notificationSound) {
+              playNotificationSound();
+            }
+            startBreak(currentPomodoro.breakDuration);
+          } else {
+            // Break is over
+            if (notificationSound) {
+              playNotificationSound();
+            }
+            startNextFocus(currentPomodoro.focusDuration);
           }
-          startNextFocus(currentPomodoro.focusDuration);
         }
       }
     }, 1000);

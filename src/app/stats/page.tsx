@@ -15,7 +15,10 @@ export default function StatsPage() {
   const weeklyData = useStatsStore((s) => s.weeklyData);
 
   useEffect(() => {
-    setMounted(true);
+    const handle = requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   if (!mounted) {

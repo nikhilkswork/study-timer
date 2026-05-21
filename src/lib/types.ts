@@ -13,6 +13,7 @@ export interface Task {
 }
 
 export type SessionType = 'focus' | 'break';
+export type FocusMode = 'pomodoro' | 'timer' | 'stopwatch';
 
 export interface PomodoroState {
   activeTaskId: string | null;
@@ -30,6 +31,7 @@ export interface PomodoroState {
   baseRemaining: number; // remaining seconds before current run
   elapsedSeconds: number; // live calculated elapsed seconds
   remainingSeconds: number; // live calculated remaining seconds
+  mode: FocusMode; // 'pomodoro' | 'timer' | 'stopwatch'
 }
 
 export interface Settings {

@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Task, PomodoroState } from '@/lib/types';
+import type { Task, PomodoroState, FocusMode } from '@/lib/types';
 import { generateId, getTodayKey, calculatePomodorosNeeded } from '@/lib/utils';
 
 interface TaskStore {
@@ -11,14 +11,18 @@ interface TaskStore {
   pomodoro: PomodoroState;
 
   // Study entry setup state
-  setupStep: 'subject' | 'split' | 'countdown' | 'inactive';
+  setupStep: 'subject' | 'mode-select' | 'pomodoro-config' | 'timer-config' | 'countdown' | 'inactive';
   setupSubject: string;
   setupSplit: 25 | 50;
+  setupTimerDuration: number;
+  setupMode: FocusMode;
 
   // Study entry setup actions
-  setSetupStep: (step: 'subject' | 'split' | 'countdown' | 'inactive') => void;
+  setSetupStep: (step: 'subject' | 'mode-select' | 'pomodoro-config' | 'timer-config' | 'countdown' | 'inactive') => void;
   setSetupSubject: (subject: string) => void;
   setSetupSplit: (split: 25 | 50) => void;
+  setSetupTimerDuration: (duration: number) => void;
+  setSetupMode: (mode: FocusMode) => void;
   startStudySession: () => void;
   exitStudySession: () => void;
   cancelStudySetup: () => void;
@@ -68,6 +72,7 @@ const initialPomodoro: PomodoroState = {
   baseRemaining: 1500,
   elapsedSeconds: 0,
   remainingSeconds: 1500,
+  mode: 'pomodoro',
 };
 
 export const useTaskStore = create<TaskStore>()(
@@ -81,28 +86,49 @@ export const useTaskStore = create<TaskStore>()(
       setupStep: 'subject',
       setupSubject: '',
       setupSplit: 25,
+      setupTimerDuration: 30,
+      setupMode: 'pomodoro',
 
       setSetupStep: (step) => set({ setupStep: step }),
       setSetupSubject: (subject) => set({ setupSubject: subject }),
       setSetupSplit: (split) => set({ setupSplit: split }),
+      setSetupTimerDuration: (duration) => set({ setupTimerDuration: duration }),
+      setSetupMode: (mode) => set({ setupMode: mode }),
 
       startStudySession: () => {
-        const { setupSubject, setupSplit, pomodoro } = get();
+        const { setupSubject, setupSplit, setupTimerDuration, setupMode, pomodoro } = get();
         if (pomodoro.activeTaskId) return;
 
         const taskId = generateId();
-        const focusDuration = setupSplit;
-        const breakDuration = setupSplit === 25 ? 5 : 10;
-        
+        let focusDuration = 25;
+        let breakDuration = 0;
+        let isInfinite = false;
+        let isInfiniteLoop = false;
+
+        if (setupMode === 'pomodoro') {
+          focusDuration = setupSplit;
+          breakDuration = setupSplit === 25 ? 5 : 10;
+          isInfiniteLoop = true;
+        } else if (setupMode === 'timer') {
+          focusDuration = setupTimerDuration;
+          breakDuration = 0;
+          isInfiniteLoop = false;
+        } else if (setupMode === 'stopwatch') {
+          focusDuration = 0;
+          breakDuration = 0;
+          isInfinite = true;
+          isInfiniteLoop = false;
+        }
+
         const newTask: Task = {
           id: taskId,
           title: setupSubject.trim() || 'No Subject',
-          totalDuration: focusDuration,
+          totalDuration: setupMode === 'stopwatch' ? 0 : focusDuration,
           elapsedTime: 0,
           completed: false,
           createdAt: new Date().toISOString(),
           pomodorosCompleted: 0,
-          pomodorosTotal: 0,
+          pomodorosTotal: setupMode === 'pomodoro' ? (setupSplit === 25 ? 1 : 2) : 0,
         };
 
         const now = Date.now();
@@ -116,17 +142,18 @@ export const useTaskStore = create<TaskStore>()(
             sessionType: 'focus',
             isRunning: true,
             currentPomodoro: 1,
-            isInfinite: false,
-            isInfiniteLoop: true,
+            isInfinite,
+            isInfiniteLoop,
             startTime: now,
-            targetEndTime: now + secs * 1000,
+            targetEndTime: setupMode === 'stopwatch' ? null : now + secs * 1000,
             pausedAt: null,
             focusDuration,
             breakDuration,
             baseElapsed: 0,
-            baseRemaining: secs,
+            baseRemaining: setupMode === 'stopwatch' ? 0 : secs,
             elapsedSeconds: 0,
-            remainingSeconds: secs,
+            remainingSeconds: setupMode === 'stopwatch' ? 0 : secs,
+            mode: setupMode,
           },
         }));
       },
@@ -253,6 +280,7 @@ export const useTaskStore = create<TaskStore>()(
             baseRemaining: isInfinite ? 0 : secs,
             elapsedSeconds: 0,
             remainingSeconds: isInfinite ? 0 : secs,
+            mode: isInfinite ? 'stopwatch' : (isInfiniteLoop ? 'pomodoro' : 'timer'),
           },
         });
       },

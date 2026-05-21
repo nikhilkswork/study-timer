@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/useTaskStore';
+import { useStatsStore } from '@/stores/useStatsStore';
 import { TaskList } from '@/components/TaskList';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { StudySetupFlow } from '@/components/StudySetupFlow';
@@ -14,13 +15,55 @@ export default function DashboardPage() {
   const checkDailyReset = useTaskStore((s) => s.checkDailyReset);
   const setupStep = useTaskStore((s) => s.setupStep);
   const activeTaskId = useTaskStore((s) => s.pomodoro.activeTaskId);
+  const totalFocusMinutes = useStatsStore((s) => s.totalFocusMinutes);
 
   useEffect(() => {
-    setMounted(true);
+    const handle = requestAnimationFrame(() => {
+      setMounted(true);
+    });
     checkDailyReset();
+    return () => cancelAnimationFrame(handle);
   }, [checkDailyReset]);
 
   if (!mounted) return null;
+
+  const getSanctuaryDetails = (minutes: number) => {
+    if (minutes < 30) {
+      return {
+        levelName: 'Mist',
+        description: 'Quiet fogs shroud the focus sanctuary.',
+        icon: '🌫️',
+      };
+    }
+    if (minutes < 120) {
+      return {
+        levelName: 'Dawn',
+        description: 'Soft amber rays warm the focus sanctuary.',
+        icon: '🌅',
+      };
+    }
+    if (minutes < 300) {
+      return {
+        levelName: 'Aurora',
+        description: 'Gentle auroras drift across the focus sanctuary.',
+        icon: '🌌',
+      };
+    }
+    if (minutes < 600) {
+      return {
+        levelName: 'Canopy',
+        description: 'Green layers breathe over the focus sanctuary.',
+        icon: '🌳',
+      };
+    }
+    return {
+      levelName: 'Cosmic Sanctuary',
+      description: 'Starlight glows over your focus sanctuary.',
+      icon: '✨',
+    };
+  };
+
+  const sanctuary = getSanctuaryDetails(totalFocusMinutes);
 
   return (
     <AnimatePresence mode="wait">
@@ -51,7 +94,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-md mx-auto px-6 py-12 md:py-20 space-y-10"
+          className="max-w-md mx-auto px-6 py-12 md:py-20 space-y-8"
         >
           {/* ── Header ── */}
           <header className="flex items-end justify-between border-b border-[hsl(var(--border))]/40 pb-6">
@@ -75,6 +118,31 @@ export default function DashboardPage() {
             </div>
             <ThemeToggle />
           </header>
+
+          {/* ── Sanctuary Evolution Card ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="p-5 rounded-2xl bg-[hsl(var(--card))]/35 border border-[hsl(var(--border))]/50 flex items-center gap-4 text-left hover:bg-[hsl(var(--card))]/50 transition-all duration-300 shadow-sm"
+          >
+            <div className="text-2xl w-10 h-10 rounded-xl bg-[hsl(var(--accent))]/10 flex items-center justify-center text-center">
+              {sanctuary.icon}
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--accent))]">
+                  Sanctuary Phase · {sanctuary.levelName}
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--border))]/60 text-[hsl(var(--muted))] font-bold uppercase">
+                  {totalFocusMinutes} min
+                </span>
+              </div>
+              <p className="text-xs text-[hsl(var(--muted))] leading-snug">
+                {sanctuary.description}
+              </p>
+            </div>
+          </motion.div>
 
           {/* ── Intentions List ── */}
           <motion.div

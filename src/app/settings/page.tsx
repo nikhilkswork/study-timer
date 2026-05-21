@@ -24,7 +24,10 @@ export default function SettingsPage() {
   const resetStats = useStatsStore((s) => s.resetStats);
 
   useEffect(() => {
-    setMounted(true);
+    const handle = requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   if (!mounted) {

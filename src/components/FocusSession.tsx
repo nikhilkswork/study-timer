@@ -24,7 +24,10 @@ export function FocusSession() {
   const activeTask = tasks.find((t) => t.id === pomodoro.activeTaskId);
 
   useEffect(() => {
-    setMounted(true);
+    const handle = requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   // Inactivity detection
@@ -41,11 +44,14 @@ export function FocusSession() {
   }, [pomodoro.isRunning, pomodoro.sessionType]);
 
   useEffect(() => {
-    resetIdleTimer();
+    const handle = requestAnimationFrame(() => {
+      resetIdleTimer();
+    });
     const events = ['mousemove', 'mousedown', 'touchstart', 'touchmove', 'scroll', 'keydown'];
     const handler = () => resetIdleTimer();
     events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
     return () => {
+      cancelAnimationFrame(handle);
       events.forEach((e) => window.removeEventListener(e, handler));
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
@@ -55,6 +61,26 @@ export function FocusSession() {
 
   if (!mounted) return null;
   if (!activeTask) return null;
+
+  // Mode specific display values
+  let modeTitle = 'Focusing';
+  let exitLabel = 'Exit Study Session';
+  
+  if (pomodoro.mode === 'timer') {
+    modeTitle = 'Deep Focus';
+    exitLabel = 'Complete Session';
+  } else if (pomodoro.mode === 'stopwatch') {
+    modeTitle = 'Open Flow';
+    exitLabel = 'Complete Focus';
+  } else if (pomodoro.mode === 'pomodoro') {
+    modeTitle = pomodoro.sessionType === 'focus' ? 'Focus Block' : 'Soft Break';
+    exitLabel = 'Exit Study Session';
+  }
+
+  // Stopwatch cyclical progress to simulate breathing (0 to 100 over 60 seconds)
+  const ringProgress = pomodoro.mode === 'stopwatch'
+    ? (pomodoro.isRunning ? ((pomodoro.elapsedSeconds % 60) / 60) * 100 : 0)
+    : sessionProgress;
 
   return (
     <motion.div
@@ -66,7 +92,7 @@ export function FocusSession() {
       onMouseMove={resetIdleTimer}
       onTouchStart={resetIdleTimer}
     >
-      {/* ── Fixed Exit Button (Top Right) ── */}
+      {/* ── Fixed Exit/Complete Button (Top Right) ── */}
       <motion.button
         animate={{ opacity: isIdle ? 0.15 : 1 }}
         transition={{ duration: 0.6, ease: 'easeInOut' }}
@@ -75,7 +101,7 @@ export function FocusSession() {
                    hover:bg-red-500 hover:text-white transition-all duration-300 active:scale-95 cursor-pointer z-50 flex items-center gap-1.5 shadow-sm"
       >
         <LogOut size={13} />
-        Exit Study Session
+        {exitLabel}
       </motion.button>
 
       {/* Spacer top */}
@@ -90,13 +116,13 @@ export function FocusSession() {
           className="text-center"
         >
           <span
-            className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border shadow-sm ${
+            className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border shadow-sm transition-colors duration-500 ${
               pomodoro.sessionType === 'focus'
                 ? 'bg-[hsl(var(--accent))]/10 border-[hsl(var(--accent))]/35 text-[hsl(var(--accent))]'
                 : 'bg-emerald-500/10 border-emerald-500/35 text-emerald-500'
             }`}
           >
-            {pomodoro.sessionType === 'focus' ? 'Focusing' : 'Taking a Break'}
+            {modeTitle}
           </span>
         </motion.div>
 
@@ -110,7 +136,7 @@ export function FocusSession() {
           className="relative flex items-center justify-center"
         >
           <ProgressRing
-            progress={sessionProgress}
+            progress={ringProgress}
             size={280}
             strokeWidth={4}
             color={pomodoro.sessionType === 'focus' ? undefined : 'hsl(142, 70%, 45%)'}
@@ -127,8 +153,36 @@ export function FocusSession() {
                   {activeTask.title}
                 </motion.p>
               )}
+
+              {/* Mode-specific detail text inside the ring */}
+              <motion.p
+                animate={{ opacity: isIdle ? 0.2 : 0.5 }}
+                transition={{ duration: 0.8 }}
+                className="text-[8px] font-semibold tracking-[0.25em] uppercase text-[hsl(var(--muted))]"
+              >
+                {pomodoro.mode === 'pomodoro'
+                  ? `Focus Block #${pomodoro.currentPomodoro}`
+                  : pomodoro.mode === 'stopwatch'
+                  ? 'Stopwatch'
+                  : 'Timer'}
+              </motion.p>
             </div>
           </ProgressRing>
+        </motion.div>
+
+        {/* Inactivity / Breathing Feedback */}
+        <motion.div
+          animate={{
+            opacity: pomodoro.isRunning && !isIdle ? 0.45 : 0,
+            y: pomodoro.isRunning && !isIdle ? 0 : -10
+          }}
+          transition={{ duration: 0.8, ease: 'easeInOut' }}
+          className="pointer-events-none h-6 flex items-center justify-center gap-2"
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--accent))] animate-pulse" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[hsl(var(--muted))]">
+            Focus Breathing
+          </span>
         </motion.div>
 
         {/* Play/Pause Button */}

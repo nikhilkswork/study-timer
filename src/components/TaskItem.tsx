@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { Trash2, CheckCircle2, Clock } from 'lucide-react';
 import { useTaskStore } from '@/stores/useTaskStore';
-import { cn } from '@/lib/utils';
 import type { Task } from '@/lib/types';
 
 interface TaskItemProps {
