@@ -43,7 +43,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">Settings</h1>
+          <h1 className="text-4xl font-serif italic font-light tracking-wide text-[hsl(var(--foreground))]">Settings</h1>
           <p className="text-[10px] font-bold tracking-widest uppercase text-[hsl(var(--muted))] mt-1">Configure your workspace</p>
         </div>
         <ThemeToggle />
@@ -53,7 +53,7 @@ export default function SettingsPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] space-y-4"
+        className="p-6 rounded-[2rem] premium-card space-y-4"
       >
         <h3 className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--muted))] opacity-80">Appearance</h3>
         <button
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="p-6 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] space-y-4"
+        className="p-6 rounded-[2rem] premium-card space-y-4"
       >
         <h3 className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--muted))] opacity-80">Sound</h3>
 
@@ -137,7 +137,7 @@ export default function SettingsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="p-6 rounded-[2rem] bg-[hsl(var(--card))] border border-red-500/20 space-y-4"
+        className="p-6 rounded-[2rem] premium-card border-red-500/20 space-y-4"
       >
         <h3 className="text-xs font-bold uppercase tracking-widest text-red-500 opacity-80">Danger Zone</h3>
 

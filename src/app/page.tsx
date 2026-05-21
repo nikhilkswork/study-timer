@@ -27,44 +27,6 @@ export default function DashboardPage() {
 
   if (!mounted) return null;
 
-  const getSanctuaryDetails = (minutes: number) => {
-    if (minutes < 30) {
-      return {
-        levelName: 'Mist',
-        description: 'Quiet fogs shroud the focus sanctuary.',
-        icon: '🌫️',
-      };
-    }
-    if (minutes < 120) {
-      return {
-        levelName: 'Dawn',
-        description: 'Soft amber rays warm the focus sanctuary.',
-        icon: '🌅',
-      };
-    }
-    if (minutes < 300) {
-      return {
-        levelName: 'Aurora',
-        description: 'Gentle auroras drift across the focus sanctuary.',
-        icon: '🌌',
-      };
-    }
-    if (minutes < 600) {
-      return {
-        levelName: 'Canopy',
-        description: 'Green layers breathe over the focus sanctuary.',
-        icon: '🌳',
-      };
-    }
-    return {
-      levelName: 'Cosmic Sanctuary',
-      description: 'Starlight glows over your focus sanctuary.',
-      icon: '✨',
-    };
-  };
-
-  const sanctuary = getSanctuaryDetails(totalFocusMinutes);
-
   return (
     <AnimatePresence mode="wait">
       {setupStep !== 'inactive' ? (
@@ -103,7 +65,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]"
+                className="text-4xl text-[hsl(var(--foreground))] font-serif italic tracking-wide font-light"
               >
                 Comodoro
               </motion.h1>
@@ -118,31 +80,6 @@ export default function DashboardPage() {
             </div>
             <ThemeToggle />
           </header>
-
-          {/* ── Sanctuary Evolution Card ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="p-5 rounded-2xl bg-[hsl(var(--card))]/35 border border-[hsl(var(--border))]/50 flex items-center gap-4 text-left hover:bg-[hsl(var(--card))]/50 transition-all duration-300 shadow-sm"
-          >
-            <div className="text-2xl w-10 h-10 rounded-xl bg-[hsl(var(--accent))]/10 flex items-center justify-center text-center">
-              {sanctuary.icon}
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--accent))]">
-                  Sanctuary Phase · {sanctuary.levelName}
-                </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--border))]/60 text-[hsl(var(--muted))] font-bold uppercase">
-                  {totalFocusMinutes} min
-                </span>
-              </div>
-              <p className="text-xs text-[hsl(var(--muted))] leading-snug">
-                {sanctuary.description}
-              </p>
-            </div>
-          </motion.div>
 
           {/* ── Intentions List ── */}
           <motion.div

@@ -28,7 +28,7 @@ export function TaskItem({ task }: TaskItemProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative p-5 rounded-2xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-[hsl(var(--muted))] transition-all duration-300 flex items-center justify-between"
+      className="group relative p-5 rounded-[1.75rem] premium-card flex items-center justify-between"
     >
       <div className="flex items-center gap-4 min-w-0">
         {/* Completed Icon */}

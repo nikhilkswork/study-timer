@@ -5,7 +5,6 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAmbientSoundSync } from '@/hooks/useAmbientSoundSync';
-import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { useEffect } from 'react';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -96,7 +95,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <AmbientBackground />
       <AnimatePresence mode="wait">
         <motion.main
           key={pathname}

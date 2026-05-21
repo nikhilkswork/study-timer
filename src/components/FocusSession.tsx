@@ -9,6 +9,7 @@ import { AnimatedTimer } from '@/components/ui/AnimatedTimer';
 import { AmbientSounds } from '@/components/AmbientSounds';
 import { useLocalTimer } from '@/hooks/useLocalTimer';
 import { initAudioContext } from '@/lib/audio';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 
 export function FocusSession() {
   const [mounted, setMounted] = useState(false);
@@ -92,6 +93,7 @@ export function FocusSession() {
       onMouseMove={resetIdleTimer}
       onTouchStart={resetIdleTimer}
     >
+      <AmbientBackground />
       {/* ── Fixed Exit/Complete Button (Top Right) ── */}
       <motion.button
         animate={{ opacity: isIdle ? 0.15 : 1 }}
@@ -170,20 +172,6 @@ export function FocusSession() {
           </ProgressRing>
         </motion.div>
 
-        {/* Inactivity / Breathing Feedback */}
-        <motion.div
-          animate={{
-            opacity: pomodoro.isRunning && !isIdle ? 0.45 : 0,
-            y: pomodoro.isRunning && !isIdle ? 0 : -10
-          }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
-          className="pointer-events-none h-6 flex items-center justify-center gap-2"
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--accent))] animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[hsl(var(--muted))]">
-            Focus Breathing
-          </span>
-        </motion.div>
 
         {/* Play/Pause Button */}
         <motion.button

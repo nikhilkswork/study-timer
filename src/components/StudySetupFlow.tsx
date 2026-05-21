@@ -125,10 +125,10 @@ export function StudySetupFlow() {
             </button>
 
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+              <h1 className="text-4xl font-serif italic font-light tracking-wide text-[hsl(var(--foreground))]">
                 What do you want to study?
               </h1>
-              <p className="text-sm text-[hsl(var(--muted))] opacity-80">
+              <p className="text-xs tracking-wider uppercase text-[hsl(var(--muted))] opacity-75">
                 Enter a topic to anchor your focus session.
               </p>
             </div>
@@ -140,25 +140,25 @@ export function StudySetupFlow() {
                 placeholder="Physics, Calculus, Operating Systems..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="w-full px-6 py-4 rounded-2xl bg-[hsl(var(--input-bg))] border border-[hsl(var(--border))] 
+                className="w-full px-6 py-4.5 rounded-full bg-[hsl(var(--input-bg))] border border-[hsl(var(--border))]/60 
                            text-[hsl(var(--foreground))] placeholder-[hsl(var(--muted))]/50 text-center text-lg
-                           focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent))]/30 focus:border-[hsl(var(--accent))]
+                           focus:outline-none focus:border-[hsl(var(--border-hover))]
                            transition-all duration-300 shadow-inner"
               />
 
               <div className="flex flex-col items-center gap-3">
                 <button
                   type="submit"
-                  className="w-full py-4 rounded-2xl bg-[hsl(var(--accent))] text-white font-medium hover:opacity-95 active:scale-[0.98] transition-all shadow-md cursor-pointer"
+                  className="w-full py-4 rounded-full bg-[hsl(var(--accent))] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[hsl(var(--accent-hover))] hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer shadow-md shadow-[hsl(var(--accent))]/10"
                 >
                   Continue
                 </button>
                 <button
                   type="button"
                   onClick={handleSkip}
-                  className="px-4 py-2 text-xs font-semibold text-red-500/80 hover:text-red-600 hover:bg-red-500/5 rounded-xl border border-red-500/20 active:scale-95 transition-all cursor-pointer"
+                  className="px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-red-500/80 hover:text-red-500 hover:bg-red-500/5 rounded-full border border-red-500/20 active:scale-95 transition-all cursor-pointer"
                 >
-                  Skip
+                  Skip Topic
                 </button>
               </div>
             </form>
@@ -185,11 +185,11 @@ export function StudySetupFlow() {
             </button>
 
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+              <h1 className="text-4xl font-serif italic font-light tracking-wide text-[hsl(var(--foreground))]">
                 Select your focus style
               </h1>
-              <p className="text-sm text-[hsl(var(--muted))] opacity-80">
-                Choose how you want to approach your session for <span className="text-[hsl(var(--foreground))] font-semibold">“{setupSubject || 'No Subject'}”</span>.
+              <p className="text-xs tracking-wider uppercase text-[hsl(var(--muted))] opacity-75">
+                Choose how you want to approach your session for <span className="text-[hsl(var(--foreground))] font-semibold font-serif italic lowercase">“{setupSubject || 'No Subject'}”</span>.
               </p>
             </div>
 
@@ -198,14 +198,14 @@ export function StudySetupFlow() {
               {/* Mode 1: Pomodoro */}
               <button
                 onClick={() => handleSelectMode('pomodoro')}
-                className="group relative p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]/40 hover:bg-[hsl(var(--card))]/80 text-center hover:border-[hsl(var(--accent))] hover:shadow-lg hover:shadow-[hsl(var(--accent))]/5 transition-all duration-300 active:scale-[0.98] cursor-pointer flex flex-col items-center space-y-4"
+                className="group p-8 rounded-[2rem] premium-card flex flex-col items-center space-y-4 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-xl bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent))] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Timer size={22} />
+                <div className="w-12 h-12 rounded-2xl bg-[hsl(var(--hover))] border border-[hsl(var(--border))]/40 text-[hsl(var(--accent))] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                  <Timer size={20} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-[hsl(var(--foreground))]">Pomodoro</h3>
-                  <p className="text-xs text-[hsl(var(--muted))] leading-relaxed">
+                  <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">Pomodoro</h3>
+                  <p className="text-[11px] text-[hsl(var(--muted))] leading-relaxed text-balance">
                     Structured intervals with built-in breaks to maintain rhythm.
                   </p>
                 </div>
@@ -214,14 +214,14 @@ export function StudySetupFlow() {
               {/* Mode 2: Timer */}
               <button
                 onClick={() => handleSelectMode('timer')}
-                className="group relative p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]/40 hover:bg-[hsl(var(--card))]/80 text-center hover:border-[hsl(var(--accent))] hover:shadow-lg hover:shadow-[hsl(var(--accent))]/5 transition-all duration-300 active:scale-[0.98] cursor-pointer flex flex-col items-center space-y-4"
+                className="group p-8 rounded-[2rem] premium-card flex flex-col items-center space-y-4 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-xl bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent))] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Clock size={22} />
+                <div className="w-12 h-12 rounded-2xl bg-[hsl(var(--hover))] border border-[hsl(var(--border))]/40 text-[hsl(var(--accent))] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                  <Clock size={20} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-[hsl(var(--foreground))]">Timer</h3>
-                  <p className="text-xs text-[hsl(var(--muted))] leading-relaxed">
+                  <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">Timer</h3>
+                  <p className="text-[11px] text-[hsl(var(--muted))] leading-relaxed text-balance">
                     Single uninterrupted countdown for focused, deep flow.
                   </p>
                 </div>
@@ -230,14 +230,14 @@ export function StudySetupFlow() {
               {/* Mode 3: Stopwatch */}
               <button
                 onClick={() => handleSelectMode('stopwatch')}
-                className="group relative p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]/40 hover:bg-[hsl(var(--card))]/80 text-center hover:border-[hsl(var(--accent))] hover:shadow-lg hover:shadow-[hsl(var(--accent))]/5 transition-all duration-300 active:scale-[0.98] cursor-pointer flex flex-col items-center space-y-4"
+                className="group p-8 rounded-[2rem] premium-card flex flex-col items-center space-y-4 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-xl bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent))] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Gauge size={22} />
+                <div className="w-12 h-12 rounded-2xl bg-[hsl(var(--hover))] border border-[hsl(var(--border))]/40 text-[hsl(var(--accent))] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                  <Gauge size={20} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-[hsl(var(--foreground))]">Stopwatch</h3>
-                  <p className="text-xs text-[hsl(var(--muted))] leading-relaxed">
+                  <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">Stopwatch</h3>
+                  <p className="text-[11px] text-[hsl(var(--muted))] leading-relaxed text-balance">
                     Open-ended upward count. Perfect for tracking flexible sessions.
                   </p>
                 </div>
@@ -274,10 +274,10 @@ export function StudySetupFlow() {
             </button>
 
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+              <h1 className="text-4xl font-serif italic font-light tracking-wide text-[hsl(var(--foreground))]">
                 Choose your Pomodoro split
               </h1>
-              <p className="text-sm text-[hsl(var(--muted))] opacity-80">
+              <p className="text-xs tracking-wider uppercase text-[hsl(var(--muted))] opacity-75">
                 Select focus and break durations for this block.
               </p>
             </div>
@@ -285,27 +285,27 @@ export function StudySetupFlow() {
             <div className="grid grid-cols-1 gap-4">
               <button
                 onClick={() => selectSplit(25)}
-                className="group relative p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-left hover:border-[hsl(var(--accent))] hover:shadow-lg hover:shadow-[hsl(var(--accent))]/5 transition-all duration-300 active:scale-[0.98] cursor-pointer"
+                className="group p-6 rounded-[2rem] premium-card text-left hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-xl font-bold text-[hsl(var(--foreground))]">25 / 5 split</h3>
-                    <p className="text-xs text-[hsl(var(--muted))] mt-1">25 min focus, 5 min break</p>
+                    <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">25 / 5 split</h3>
+                    <p className="text-[11px] text-[hsl(var(--muted))] mt-1">25 min focus, 5 min break</p>
                   </div>
-                  <span className="text-2xl opacity-40 group-hover:opacity-100 group-hover:text-[hsl(var(--accent))] transition-all">🌱</span>
+                  <span className="text-xl opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">🌱</span>
                 </div>
               </button>
 
               <button
                 onClick={() => selectSplit(50)}
-                className="group relative p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-left hover:border-[hsl(var(--accent))] hover:shadow-lg hover:shadow-[hsl(var(--accent))]/5 transition-all duration-300 active:scale-[0.98] cursor-pointer"
+                className="group p-6 rounded-[2rem] premium-card text-left hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-xl font-bold text-[hsl(var(--foreground))]">50 / 10 split</h3>
-                    <p className="text-xs text-[hsl(var(--muted))] mt-1">50 min focus, 10 min break</p>
+                    <h3 className="text-base font-semibold text-[hsl(var(--foreground))]">50 / 10 split</h3>
+                    <p className="text-[11px] text-[hsl(var(--muted))] mt-1">50 min focus, 10 min break</p>
                   </div>
-                  <span className="text-2xl opacity-40 group-hover:opacity-100 group-hover:text-[hsl(var(--accent))] transition-all">🌳</span>
+                  <span className="text-xl opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">🌳</span>
                 </div>
               </button>
             </div>
@@ -340,10 +340,10 @@ export function StudySetupFlow() {
             </button>
 
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+              <h1 className="text-4xl font-serif italic font-light tracking-wide text-[hsl(var(--foreground))]">
                 How long to focus?
               </h1>
-              <p className="text-sm text-[hsl(var(--muted))] opacity-80">
+              <p className="text-xs tracking-wider uppercase text-[hsl(var(--muted))] opacity-75">
                 Pick a duration for single uninterrupted focus.
               </p>
             </div>
@@ -356,10 +356,10 @@ export function StudySetupFlow() {
                     key={d}
                     type="button"
                     onClick={() => setTempTimerDuration(d)}
-                    className={`py-3.5 rounded-xl border transition-all duration-300 font-semibold cursor-pointer active:scale-95 ${
+                    className={`py-3.5 rounded-2xl border transition-all duration-300 font-semibold cursor-pointer active:scale-95 text-xs uppercase tracking-wider ${
                       tempTimerDuration === d
                         ? 'bg-[hsl(var(--accent))] border-[hsl(var(--accent))] text-white shadow-sm'
-                        : 'border-[hsl(var(--border))] bg-[hsl(var(--card))]/50 hover:bg-[hsl(var(--card))] text-[hsl(var(--foreground))]'
+                        : 'border-[hsl(var(--border))]/60 bg-[hsl(var(--card))]/40 hover:bg-[hsl(var(--card))] text-[hsl(var(--foreground))]'
                     }`}
                   >
                     {d}m
@@ -368,8 +368,8 @@ export function StudySetupFlow() {
               </div>
 
               {/* Slider for custom adjustments */}
-              <div className="space-y-3 p-5 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]/30">
-                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted))]">
+              <div className="space-y-3 p-5 rounded-[2rem] premium-card">
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted))]">
                   <span>Custom Duration</span>
                   <span className="text-[hsl(var(--foreground))]">{tempTimerDuration} minutes</span>
                 </div>
@@ -387,7 +387,7 @@ export function StudySetupFlow() {
               <div className="flex flex-col items-center gap-4">
                 <button
                   onClick={startTimerSession}
-                  className="w-full py-4 rounded-2xl bg-[hsl(var(--accent))] text-white font-medium hover:opacity-95 active:scale-[0.98] transition-all shadow-md cursor-pointer"
+                  className="w-full py-4 rounded-full bg-[hsl(var(--accent))] text-white text-[10px] font-bold uppercase tracking-widest hover:bg-[hsl(var(--accent-hover))] hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer shadow-md shadow-[hsl(var(--accent))]/10"
                 >
                   Start Focus Session
                 </button>

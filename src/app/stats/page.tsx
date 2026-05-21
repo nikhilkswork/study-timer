@@ -64,7 +64,7 @@ export default function StatsPage() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">Stats</h1>
+          <h1 className="text-4xl font-serif italic font-light tracking-wide text-[hsl(var(--foreground))]">Stats</h1>
           <p className="text-[10px] font-bold tracking-widest uppercase text-[hsl(var(--muted))] mt-1">Focus & consistency log</p>
         </div>
         <ThemeToggle />
@@ -74,7 +74,7 @@ export default function StatsPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] space-y-4"
+        className="p-6 rounded-[2rem] premium-card space-y-4"
       >
         <div className="flex items-center gap-2 text-[hsl(var(--muted))]">
           <Calendar size={15} />
@@ -104,7 +104,7 @@ export default function StatsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="p-5 rounded-[2rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex items-center justify-between"
+            className="p-5 rounded-[2rem] premium-card flex items-center justify-between"
           >
             <div className="flex items-center gap-4">
               <div className={`w-10 h-10 rounded-2xl ${card.bg} flex items-center justify-center`}>
