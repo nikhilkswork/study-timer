@@ -64,17 +64,20 @@ export function StudySetupFlow() {
   }, [setupStep, startStudySession]);
 
   const handleSubjectSubmit = (e?: React.FormEvent) => {
+    initAudioContext();
     if (e) e.preventDefault();
     setSetupSubject(inputValue);
     setSetupStep('mode-select');
   };
 
   const handleSkip = () => {
+    initAudioContext();
     setSetupSubject('No Subject');
     setSetupStep('mode-select');
   };
 
   const handleSelectMode = (mode: 'pomodoro' | 'timer' | 'stopwatch') => {
+    initAudioContext();
     setSetupMode(mode);
     if (mode === 'pomodoro') {
       setSetupStep('pomodoro-config');
@@ -86,11 +89,13 @@ export function StudySetupFlow() {
   };
 
   const selectSplit = (split: 25 | 50) => {
+    initAudioContext();
     setSetupSplit(split);
     setSetupStep('countdown');
   };
 
   const startTimerSession = () => {
+    initAudioContext();
     setSetupTimerDuration(tempTimerDuration);
     setSetupStep('countdown');
   };

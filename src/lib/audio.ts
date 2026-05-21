@@ -8,8 +8,15 @@ let cafeInterval: ReturnType<typeof setInterval> | null = null;
 let forestInterval: ReturnType<typeof setInterval> | null = null;
 
 function getAudioContext(): AudioContext {
+  if (typeof window === 'undefined') {
+    throw new Error('AudioContext is only available in browser');
+  }
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContextClass) {
+    throw new Error('Web Audio API not supported in this browser');
+  }
   if (!audioContext || audioContext.state === 'closed') {
-    audioContext = new AudioContext();
+    audioContext = new AudioContextClass();
   }
   if (audioContext.state === 'suspended') {
     audioContext.resume();
@@ -365,8 +372,6 @@ export function startAmbientSound(type: AmbientSound, volume: number): void {
 }
 
 export function stopAmbientSound(): void {
-  const ctx = audioContext;
-  
   if (cafeInterval) {
     clearInterval(cafeInterval);
     cafeInterval = null;
@@ -376,39 +381,20 @@ export function stopAmbientSound(): void {
     forestInterval = null;
   }
 
-  if (ambientGain && ctx) {
-    const currentGain = ambientGain.gain.value;
-    ambientGain.gain.cancelScheduledValues(ctx.currentTime);
-    ambientGain.gain.setValueAtTime(currentGain, ctx.currentTime);
-    ambientGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+  ambientNodes.forEach(node => {
+    try {
+      if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
+        node.stop();
+      }
+      node.disconnect();
+    } catch { /* Already stopped */ }
+  });
+  ambientNodes = [];
 
-    const nodesToStop = [...ambientNodes];
-    const gainToDisconnect = ambientGain;
-
-    setTimeout(() => {
-      nodesToStop.forEach(node => {
-        try {
-          if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
-            node.stop();
-          }
-          node.disconnect();
-        } catch { /* Already stopped */ }
-      });
-      try { gainToDisconnect.disconnect(); } catch { /* */ }
-    }, 850);
-
-    ambientNodes = [];
-    ambientGain = null;
-  } else {
-    ambientNodes.forEach(node => {
-      try {
-        if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
-          node.stop();
-        }
-        node.disconnect();
-      } catch { /* */ }
-    });
-    ambientNodes = [];
+  if (ambientGain) {
+    try {
+      ambientGain.disconnect();
+    } catch { /* */ }
     ambientGain = null;
   }
 }

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
 import { useStatsStore } from '@/stores/useStatsStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 
 interface Particle {
   x: number;
@@ -19,6 +20,7 @@ interface Particle {
 export function AmbientBackground() {
   const [mounted, setMounted] = useState(false);
   const totalFocusMinutes = useStatsStore((s) => s.totalFocusMinutes);
+  const theme = useSettingsStore((s) => s.theme);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number>(0);
@@ -105,10 +107,14 @@ export function AmbientBackground() {
         
         if (p.twinkle) {
           // Sparkly golden tint
-          ctx.fillStyle = `rgba(253, 224, 71, ${p.alpha})`;
+          ctx.fillStyle = theme === 'dark' 
+            ? `rgba(253, 224, 71, ${p.alpha})` 
+            : `rgba(245, 158, 11, ${p.alpha})`;
         } else {
           // Accent colored glow
-          ctx.fillStyle = `rgba(150, 180, 140, ${p.alpha})`;
+          ctx.fillStyle = theme === 'dark' 
+            ? `rgba(167, 243, 208, ${p.alpha})` 
+            : `rgba(45, 85, 55, ${p.alpha})`;
         }
         ctx.fill();
       });
@@ -122,22 +128,66 @@ export function AmbientBackground() {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animFrameRef.current);
     };
-  }, [mounted, level]);
+  }, [mounted, level, theme]);
 
   if (!mounted) return null;
+
+  // Gradients for Light vs Dark mode based on Sanctuary level
+  const lightGradients = [
+    'from-[hsl(var(--background))] to-[hsl(var(--card))]',
+    'from-[hsl(var(--background))] via-[hsl(var(--card))] to-[#fef3c7]/20',
+    'from-[hsl(var(--background))] via-[hsl(var(--card))] to-[rgba(167,243,208,0.15)]',
+    'from-[hsl(var(--background))] via-[#f0f4f1] to-[rgba(167,243,208,0.25)]',
+    'from-[hsl(var(--background))] via-[#ecf3ee] to-[rgba(147,223,188,0.35)]'
+  ];
+
+  const darkGradients = [
+    'from-[hsl(var(--background))] to-[hsl(var(--card))]',
+    'from-[hsl(var(--background))] via-[hsl(var(--card))] to-[#062f4f]/10',
+    'from-[hsl(var(--background))] via-[hsl(var(--card))] to-[#022c22]/20',
+    'from-[#041a16] via-[hsl(var(--background))] to-[#064e3b]/30',
+    'from-[#021411] via-[#060c0a] to-[#043327]/40'
+  ];
+
+  const currentGradient = theme === 'dark' ? darkGradients[level - 1] : lightGradients[level - 1];
+
+  // Fog configurations (light vs dark)
+  const getFog1Color = () => {
+    if (theme === 'light') {
+      if (level === 1) return 'opacity-[0.03] bg-[hsl(var(--accent))]';
+      if (level === 2) return 'opacity-[0.05] bg-[#f59e0b]'; // gold dawn
+      if (level === 3) return 'opacity-[0.07] bg-[#10b981]'; // mint green
+      if (level === 4) return 'opacity-[0.10] bg-[#059669]';
+      return 'opacity-[0.13] bg-[#047857]';
+    } else {
+      if (level === 1) return 'opacity-[0.03] bg-[hsl(var(--accent))]';
+      if (level === 2) return 'opacity-[0.05] bg-[#10b981]';
+      if (level === 3) return 'opacity-[0.08] bg-[#059669]';
+      if (level === 4) return 'opacity-[0.12] bg-[#065f46]';
+      return 'opacity-[0.16] bg-[#022c22]';
+    }
+  };
+
+  const getFog2Color = () => {
+    if (theme === 'light') {
+      if (level === 1) return 'opacity-[0.02] bg-[#a7f3d0]';
+      if (level === 2) return 'opacity-[0.03] bg-[#86efac]';
+      if (level === 3) return 'opacity-[0.05] bg-[#34d399]';
+      if (level === 4) return 'opacity-[0.07] bg-[#059669]';
+      return 'opacity-[0.10] bg-[#065f46]';
+    } else {
+      if (level === 1) return 'opacity-[0.02] bg-[#06b6d4]';
+      if (level === 2) return 'opacity-[0.03] bg-[#0d9488]';
+      if (level === 3) return 'opacity-[0.05] bg-[#0f766e]';
+      if (level === 4) return 'opacity-[0.08] bg-[#115e59]';
+      return 'opacity-[0.12] bg-[#134e4a]';
+    }
+  };
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
       {/* Soft gradient base - deepens with level */}
-      <div 
-        className={`absolute inset-0 transition-colors duration-1000 bg-gradient-to-b ${
-          level === 1 ? 'from-[hsl(var(--background))] to-[hsl(var(--card))]'
-          : level === 2 ? 'from-[hsl(var(--background))] via-[hsl(var(--card))] to-[#fef3c7]/2'
-          : level === 3 ? 'from-[#0f172a] via-[#111827] to-[#1e1b4b]/20'
-          : level === 4 ? 'from-[#022c22] via-[#090d16] to-[#042f2e]/20'
-          : 'from-[#030712] via-[#0b0f19] to-[#1e1b4b]/30'
-        }`} 
-      />
+      <div className={`absolute inset-0 transition-all duration-1000 bg-gradient-to-b ${currentGradient}`} />
 
       {/* Floating fog layer 1 */}
       <motion.div
@@ -152,16 +202,10 @@ export function AmbientBackground() {
           ease: 'easeInOut',
         }}
         style={{ willChange: 'transform' }}
-        className={`absolute -top-[20%] -left-[20%] w-[140%] h-[140%] blur-[120px] rounded-full transform-gpu transition-all duration-1000 ${
-          level === 1 ? 'opacity-[0.03] bg-[hsl(var(--accent))]'
-          : level === 2 ? 'opacity-[0.05] bg-[hsl(var(--accent))]'
-          : level === 3 ? 'opacity-[0.07] bg-[hsl(var(--accent))]'
-          : level === 4 ? 'opacity-[0.10] bg-[#10b981]'
-          : 'opacity-[0.13] bg-[#059669]'
-        }`}
+        className={`absolute -top-[20%] -left-[20%] w-[140%] h-[140%] blur-[120px] rounded-full transform-gpu transition-all duration-1000 ${getFog1Color()}`}
       />
 
-      {/* Floating fog layer 2 (Teal) */}
+      {/* Floating fog layer 2 */}
       <motion.div
         animate={{
           x: ['5%', '-5%', '5%'],
@@ -174,13 +218,7 @@ export function AmbientBackground() {
           ease: 'easeInOut',
         }}
         style={{ willChange: 'transform' }}
-        className={`absolute top-[20%] left-[20%] w-[120%] h-[120%] blur-[140px] rounded-full transform-gpu transition-all duration-1000 ${
-          level === 1 ? 'opacity-[0.02] bg-[#14b8a6]'
-          : level === 2 ? 'opacity-[0.03] bg-[#14b8a6]'
-          : level === 3 ? 'opacity-[0.05] bg-[#0d9488]'
-          : level === 4 ? 'opacity-[0.08] bg-[#06b6d4]'
-          : 'opacity-[0.11] bg-[#0284c7]'
-        }`}
+        className={`absolute top-[20%] left-[20%] w-[120%] h-[120%] blur-[140px] rounded-full transform-gpu transition-all duration-1000 ${getFog2Color()}`}
       />
 
       {/* Level 2+: Dawn warm ray/source */}
@@ -197,10 +235,9 @@ export function AmbientBackground() {
           }}
           style={{ willChange: 'transform' }}
           className={`absolute top-[-30%] right-[-10%] w-[80%] h-[80%] blur-[130px] rounded-full bg-[#f59e0b] transform-gpu transition-opacity duration-1000 ${
-            level === 2 ? 'opacity-[0.025]'
-            : level === 3 ? 'opacity-[0.04]'
-            : level === 4 ? 'opacity-[0.06]'
-            : 'opacity-[0.08]'
+            theme === 'light'
+              ? (level === 2 ? 'opacity-[0.015]' : level === 3 ? 'opacity-[0.025]' : level === 4 ? 'opacity-[0.035]' : 'opacity-[0.045]')
+              : (level === 2 ? 'opacity-[0.025]' : level === 3 ? 'opacity-[0.04]' : level === 4 ? 'opacity-[0.06]' : 'opacity-[0.08]')
           }`}
         />
       )}
@@ -219,9 +256,9 @@ export function AmbientBackground() {
           }}
           style={{ willChange: 'transform' }}
           className={`absolute bottom-[-20%] left-[-10%] w-[100%] h-[100%] blur-[150px] rounded-full bg-[#8b5cf6] transform-gpu transition-opacity duration-1000 ${
-            level === 3 ? 'opacity-[0.035]'
-            : level === 4 ? 'opacity-[0.055]'
-            : 'opacity-[0.085]'
+            theme === 'light'
+              ? (level === 3 ? 'opacity-[0.02]' : level === 4 ? 'opacity-[0.035]' : 'opacity-[0.05]')
+              : (level === 3 ? 'opacity-[0.035]' : level === 4 ? 'opacity-[0.055]' : 'opacity-[0.085]')
           }`}
         />
       )}

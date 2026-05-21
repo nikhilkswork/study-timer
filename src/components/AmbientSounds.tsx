@@ -19,11 +19,13 @@ export function AmbientSounds() {
   const ambientVolume = useSettingsStore((s) => s.ambientVolume);
   const setAmbientSoundSetting = useSettingsStore((s) => s.setAmbientSound);
   const setAmbientVolumeSetting = useSettingsStore((s) => s.setAmbientVolume);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const setSoundEnabledSetting = useSettingsStore((s) => s.setSoundEnabled);
 
   const isRunning = useTaskStore((s) => s.pomodoro.isRunning);
   const activeTaskId = useTaskStore((s) => s.pomodoro.activeTaskId);
 
-  const isPlaying = isRunning && activeTaskId !== null && ambientSound !== 'none';
+  const isPlaying = isRunning && activeTaskId !== null && ambientSound !== 'none' && soundEnabled;
 
   const toggleSound = (soundId: AmbientSoundType) => {
     initAudioContext();
@@ -31,6 +33,7 @@ export function AmbientSounds() {
       setAmbientSoundSetting('none');
     } else {
       setAmbientSoundSetting(soundId);
+      setSoundEnabledSetting(true);
     }
   };
 
@@ -38,6 +41,9 @@ export function AmbientSounds() {
     initAudioContext();
     setAmbientVolumeSetting(vol);
     setAmbientVolume(vol);
+    if (!soundEnabled && vol > 0) {
+      setSoundEnabledSetting(true);
+    }
   };
 
   return (

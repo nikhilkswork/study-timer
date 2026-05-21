@@ -24,8 +24,7 @@ export function Navigation() {
       <div className="mx-auto max-w-lg md:max-w-4xl">
         <div
           className="flex items-center justify-around py-2 px-4 mx-3 mb-3 md:mt-3 md:mb-0
-                      rounded-2xl bg-[var(--card)]/80 backdrop-blur-xl
-                      border border-[var(--border)] shadow-lg gap-2"
+                      rounded-[2rem] premium-card gap-2"
         >
           {navItems.map(({ href, icon: Icon, label }) => {
             const isActive = pathname === href;
@@ -34,14 +33,14 @@ export function Navigation() {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200',
+                  'flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-300',
                   isActive
-                    ? 'text-[var(--accent)]'
-                    : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                    ? 'text-[hsl(var(--accent))] scale-105'
+                    : 'text-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] hover:scale-102'
                 )}
               >
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
-                <span className="text-[10px] font-medium">{label}</span>
+                <Icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
               </Link>
             );
           })}

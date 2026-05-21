@@ -12,11 +12,11 @@ export function ThemeToggle() {
     <motion.button
       whileTap={{ scale: 0.9 }}
       onClick={toggleTheme}
-      className="p-2 rounded-xl hover:bg-[var(--hover)] text-[var(--muted)] 
-                 hover:text-[var(--foreground)] transition-all duration-200"
+      className="p-2.5 rounded-xl hover:bg-[hsl(var(--hover))] text-[hsl(var(--muted))] 
+                 hover:text-[hsl(var(--foreground))] transition-all duration-300 cursor-pointer"
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
-      {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+      {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
     </motion.button>
   );
 }
